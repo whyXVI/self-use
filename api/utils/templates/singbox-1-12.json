@@ -86,6 +86,7 @@
       "tag": "PROXY",
 
       "outbounds": [
+        "auto"
       ],
       "default": "auto"
     },

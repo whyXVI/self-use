@@ -99,9 +99,34 @@ export function addOutboundsToTemplate(newOutbounds: any[]): any {
   const templatePath = join(process.cwd(), 'api', 'utils', 'templates', 'singbox-1-12.json');
   
   const baseConfig = JSON.parse(readFileSync(templatePath, 'utf-8'));
+
+  // Internal tag conflict resolution within newOutbounds
+  const seenTags = new Set<string>();
+  const processedNewOutbounds = newOutbounds.map(outbound => {
+    let uniqueTag = outbound.tag;
+    let suffix = 1;
+    
+    // boundary: ensure uniqueness within newOutbounds only
+    while (seenTags.has(uniqueTag)) {
+      uniqueTag = `${outbound.tag}_${suffix}`;
+      suffix++;
+    }
+    
+    seenTags.add(uniqueTag);
+    
+    return {
+      ...outbound,
+      tag: uniqueTag
+    };
+  });
+  
+  const newTags = processedNewOutbounds
+    .map(outbound => outbound.tag);
+  
+  baseConfig.outbounds.find((outbound: any) => outbound.tag === "auto").outbounds.push(...newTags);
   
   return {
     ...baseConfig,
-    outbounds: [...baseConfig.outbounds, ...newOutbounds]
+    outbounds: [...baseConfig.outbounds, ...processedNewOutbounds]
   };
 }
