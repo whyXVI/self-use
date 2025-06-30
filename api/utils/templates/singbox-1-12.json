@@ -25,12 +25,6 @@
     ],
     "rules": [    
       {
-        "rule_set": "geosite-geolocation-cn",
-        "action": "route",
-        "server": "dns_direct",
-        "client_subnet": "114.114.114.114/24"
-      },
-      {
         "type": "logical",
         "mode": "and",
         "rules": [
@@ -86,7 +80,7 @@
       "tag": "PROXY",
 
       "outbounds": [
-        "auto"
+        "auto", "DIRECT"
       ],
       "default": "auto"
     },
@@ -99,29 +93,59 @@
       "url": "https://www.gstatic.com/generate_204",
       "interval": "3m",
       "tolerance": 400
+    },
+    {
+      "tag":"AI",
+      "type":"selector",
+      "outbounds":[
+      ]
     }
   ],
   "route": {
     "rules":[
-      {
-        "source_ip_is_private": true,
-        "ip_is_private": true,
-        "action": "route",
-        "outbound": "DIRECT"
-      },
+      
       {
         "inbound": "tun-in",
         "action": "sniff",
-        "timeout": "30ms"
+        "timeout": "300ms"
       },
       {
         "protocol": "dns",
         "action": "hijack-dns"
       },
+
       {
-        "inbound": "tun-in",
-        "action": "resolve"
+        "ip_is_private": true,
+        "action": "route",
+        "outbound": "DIRECT"
+      },
+
+      {
+        "clash_mode": "Direct",
+        "action": "route",
+        "outbound": "DIRECT"
+      },
+      {
+        "clash_mode": "Global",
+        "action": "route",
+        "outbound": "PROXY"
+      },
+
+      {
+        "rule_set": "ai-non-ip",
+        "clash_mode": "Rule",
+        "action": "route",
+        "outbound": "AI"
+      },
+
+      {
+        "rule_set": ["geosite-geolocation-cn", "geoip-cn"],
+        "clash_mode": "Rule",
+        "action": "route",
+        "outbound": "DIRECT"
       }
+
+
     ],
     "rule_set": [
       { 
@@ -143,6 +167,13 @@
         "tag": "geosite-geolocation-!cn",
         "format": "binary",
         "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs",
+        "download_detour": "PROXY"
+      },
+      {
+        "tag": "ai-non-ip",
+        "type": "remote",
+        "format": "source",
+        "url": "https://ruleset.skk.moe/sing-box/non_ip/ai.json",
         "download_detour": "PROXY"
       }
     ],
