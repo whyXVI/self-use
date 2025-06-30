@@ -82,7 +82,7 @@ export async function encrypt(params: Record<string, any>, compressLevel: number
  * @returns {Promise<Record<string, any>>} 解密后的参数对象。
  * @throws {Error} 如果解密失败 (例如，密码错误或数据损坏)。
  */
-export async function decrypt(encryptedString: string): Promise<Record<string, any>> {
+export async function decrypt(encryptedString: string): Promise<Record<string, any> | string> {
     try {
         const payload = Buffer.from(encryptedString, 'base64url');
         const nonce = payload.subarray(0, NONCE_SIZE);
@@ -95,7 +95,7 @@ export async function decrypt(encryptedString: string): Promise<Record<string, a
         const plaintext = await decompress(compressed);
         return JSON.parse(plaintext.toString('utf-8'));
     } catch (error: any) {
-        // 捕获底层错误 (如 'Unsupported state' 或 'Invalid auth tag') 并包装成更通用的消息
-        throw new Error(`Decryption failed. This could be due to an incorrect password or corrupted data. Original error: ${error.message}`);
+        console.log("Decryption failed:", error.message);
+        return encryptedString;
     }
 }

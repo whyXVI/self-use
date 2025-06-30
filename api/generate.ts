@@ -1,6 +1,8 @@
 import { encrypt, decrypt } from './utils/crypto.js';
+import { paramsToUrls, extractClashmetaNodes, clashmetaSSToSingbox, addOutboundsToTemplate } from './utils/parser.js';
+import { fetchWithRetry } from './utils/fetch.js';
+export const maxDuration = 10;
 
-export const maxDuration = 5;
 
 export async function GET(request: Request) {
     try {
@@ -15,57 +17,50 @@ export async function GET(request: Request) {
         }
 
         const params = await decrypt(encryptedSeed);
+        if (typeof params !== 'object' || params === null) {
+            return new Response(params, {
+                status: 200,
+                headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+            });
+        }
         
         const responseData: any = {
             receivedParams: params,
-            processedAt: new Date().toISOString(),
+            processedAt: new Date().toISOString()
         };
         
-        if (params && typeof params === 'object' && typeof params.url === 'string') {
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
-                
-                const fetchResponse = await fetch(params.url, {
-                    signal: controller.signal,
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (compatible; ContentFetcher/1.0)',
-                    }
-                });
-                
-                clearTimeout(timeoutId);
-                
-                const contentType = fetchResponse.headers.get('content-type');
-                
-                if (contentType && contentType.includes('text/plain')) {
-                    const textContent = await fetchResponse.text();
-                    responseData.fetchedContent = {
-                        url: params.url,
-                        contentType: contentType,
-                        content: textContent,
-                        fetchedAt: new Date().toISOString(),
-                        status: fetchResponse.status,
-                        statusText: fetchResponse.statusText
-                    };
+        // Fetch specific params
+        const urls = paramsToUrls(params);
+        if (urls.success) {
+            const results = await Promise.allSettled(urls.urls.map(fetchWithRetry));
+            const successfulTexts: string[] = [];
+
+            results.forEach((result) => {
+                if (result.status === 'fulfilled' && result.value.success && result.value.response) {
+                    
+                    successfulTexts.push(result.value.response);
+                    
                 } else {
-                    responseData.fetchedContent = {
-                        url: params.url,
-                        contentType: contentType || 'unknown',
-                        error: 'Content-Type is not text/plain',
-                        status: fetchResponse.status,
-                        statusText: fetchResponse.statusText
-                    };
+                    console.warn("Fetch failed:", result);
                 }
-            } catch (fetchError: any) {
-                responseData.fetchedContent = {
-                    url: params.url,
-                    error: fetchError.name === 'AbortError' 
-                        ? 'Fetch timeout' 
-                        : fetchError.message,
-                    errorType: fetchError.name
-                };
+            });
+            responseData.successfulFetches = successfulTexts.length;
+
+            const nodes = extractClashmetaNodes(successfulTexts);
+            const singboxNodes = clashmetaSSToSingbox(nodes,'dns_local');
+
+            if (singboxNodes.length > 0) {
+                const config_json = addOutboundsToTemplate(singboxNodes);
+                responseData.configData = config_json;
             }
+            
         }
+        
+        
+        // fill template
+
+        
+
         
         const encryptedResponse = await encrypt(responseData);
 

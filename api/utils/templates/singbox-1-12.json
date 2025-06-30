@@ -1,0 +1,160 @@
+{
+  "log": {"level": "debug"},
+  "dns": {
+    "servers": [
+      {
+        "type": "local",
+        "tag": "dns_local"
+      },
+      {
+        "tag": "dns_direct",
+        "type": "udp",
+        "server": "223.5.5.5"
+      },
+      {
+        "tag": "dns_proxy",
+        "type": "h3",
+        "server": "1.1.1.1"
+      },
+      {
+        "type": "fakeip",
+        "tag": "dns_fakeip",
+        "inet4_range": "198.18.0.0/15",
+        "inet6_range": "fc00::/18"
+      }
+    ],
+    "rules": [    
+      {
+        "rule_set": "geosite-geolocation-cn",
+        "action": "route",
+        "server": "dns_direct",
+        "client_subnet": "114.114.114.114/24"
+      },
+      {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          {
+            "rule_set": "geosite-geolocation-!cn",
+            "invert": true
+          },
+          {
+            "rule_set": "geoip-cn"
+          }
+        ],
+        "action": "route",
+        "client_subnet": "114.114.114.114/24",
+        "server": "dns_direct"
+      },
+      {
+        "query_type": [
+          "A",
+          "AAAA"
+        ],
+        "action": "route",
+        "server": "dns_fakeip"
+      }
+    ],
+    "final": "dns_proxy",
+    "strategy": "ipv4_only"
+  },
+  "ntp": {"enabled":true,"server":"time.apple.com","server_port":123,"interval":"30m","detour":"DIRECT"},
+  "inbounds": [
+    {
+      "tag": "tun-in",
+      "type": "tun",
+      "stack": "gvisor",
+      "address": [
+        "172.18.0.1/30",
+        "fdfe:dcba:9876::1/126"
+      ],
+      "mtu": 9000,
+      "auto_route": true,
+      "route_address": [
+        "0.0.0.0/1",
+        "128.0.0.0/1"
+      ],
+      "route_exclude_address": [
+        "192.168.0.0/16"
+      ]
+    }
+  ],
+  "outbounds": [
+    {"type":"direct","tag":"DIRECT"},{"type":"block","tag":"REJECT"},
+    {
+      "type": "selector",
+      "tag": "PROXY",
+
+      "outbounds": [
+      ],
+      "default": "auto"
+    },
+    {
+      "type": "urltest",
+      "tag": "auto",
+
+      "outbounds": [
+      ],
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": "3m",
+      "tolerance": 400
+    }
+  ],
+  "route": {
+    "rules":[
+      {
+        "source_ip_is_private": true,
+        "ip_is_private": true,
+        "action": "route",
+        "outbound": "DIRECT"
+      },
+      {
+        "inbound": "tun-in",
+        "action": "sniff",
+        "timeout": "30ms"
+      },
+      {
+        "protocol": "dns",
+        "action": "hijack-dns"
+      },
+      {
+        "inbound": "tun-in",
+        "action": "resolve"
+      }
+    ],
+    "rule_set": [
+      { 
+        "tag": "geoip-cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs",
+        "download_detour": "PROXY"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-geolocation-cn",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs",
+        "download_detour": "PROXY"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-geolocation-!cn",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs",
+        "download_detour": "PROXY"
+      }
+    ],
+    "final": "PROXY"
+  },
+  "experimental": {
+    "cache_file": {
+      "enabled": true,
+      "store_fakeip": true,
+      "store_rdrc": true
+    },
+    "clash_api": {
+      "external_controller": "127.0.0.1:9090"
+    }
+  }
+}

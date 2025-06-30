@@ -38,6 +38,14 @@
         <div class="response-container">
             <label>Encrypted Seed (Base64Url)</label>
             <div class="response-area">
+                <button 
+                  v-if="encryptedOutput && !errorMessage" 
+                  @click="copyToClipboard(encryptedOutput)"
+                  class="copy-button"
+                  title="Copy to clipboard"
+                >
+                  📋
+                </button>
                 <pre v-if="errorMessage" class="error-message">{{ errorMessage }}</pre>
                 <pre v-else-if="encryptedOutput">{{ encryptedOutput }}</pre>
                 <p v-else class="placeholder">Waiting for encryption result...</p>
@@ -47,6 +55,14 @@
         <div class="response-container">
             <label>API Response (`/api/generate`)</label>
             <div class="response-area">
+                <button 
+                  v-if="apiResponse && !apiError" 
+                  @click="copyToClipboard(apiResponse)"
+                  class="copy-button"
+                  title="Copy to clipboard"
+                >
+                  📋
+                </button>
                 <pre v-if="apiError" class="error-message">{{ apiError }}</pre>
                 <pre v-else-if="apiResponse">{{ apiResponse }}</pre>
                 <p v-else class="placeholder">Waiting for API response...</p>
@@ -55,6 +71,14 @@
         <div class="response-container">
             <label>Decrypted Response</label>
             <div class="response-area">
+                <button 
+                  v-if="decryptedResponse" 
+                  @click="copyToClipboard(JSON.stringify(decryptedResponse, null, 2))"
+                  class="copy-button"
+                  title="Copy to clipboard"
+                >
+                  📋
+                </button>
                 <pre v-if="decryptedResponse">{{ JSON.stringify(decryptedResponse, null, 2) }}</pre>
                 <p v-else class="placeholder">Waiting for decryption result...</p>
             </div>
@@ -88,6 +112,14 @@ const HKDF_INFO = textEncoder.encode('blog-encryption');
 const NONCE_SIZE = 12;
 const AUTH_TAG_SIZE = 16;
 const ZSTD_LEVEL = 19;
+
+async function copyToClipboard(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    console.error('Failed to copy text: ', err);
+  }
+}
 
 async function deriveKey(passwordStr: string): Promise<CryptoKey> {
     const passwordBytes = textEncoder.encode(passwordStr);
@@ -348,6 +380,7 @@ label {
 }
 
 .response-area {
+  position: relative;
   flex: 1;
   padding: 10px;
   border: 1px solid #ddd;
@@ -374,5 +407,23 @@ label {
 
 .error-message {
   color: #dc3545;
+}
+
+.copy-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  z-index: 1;
+}
+
+.copy-button:hover {
+  border-color: #007bff;
 }
 </style>
