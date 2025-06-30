@@ -46,23 +46,24 @@ export async function GET(request: Request) {
             });
             responseData.successfulFetches = successfulTexts.length;
 
-            const nodes = extractClashmetaNodes(successfulTexts);
-            const singboxNodes = clashmetaSSToSingbox(nodes,'dns_local');
+            try {
+                const nodes = extractClashmetaNodes(successfulTexts);
+                if (nodes.length === 0) throw new Error("No nodes found in the provided data.");
 
-            if (singboxNodes.length > 0) {
-                const config_json = addOutboundsToTemplate(singboxNodes);
-                responseData.configData = config_json;
+                const singboxNodes = clashmetaSSToSingbox(nodes,'dns_local');
+                if (singboxNodes.length > 0) {
+                    const config_json = addOutboundsToTemplate(singboxNodes);
+                    responseData.configData = config_json;
+                }
+            }
+            catch (error: any) {
+                console.error("Error extracting nodes:", error);
+                responseData.configData = params;
             }
             
         }
         
-        
-        // fill template
-
-        
-
-        
-        const encryptedResponse = await encrypt(responseData);
+        const encryptedResponse = await encrypt(responseData.configData);
 
         return new Response(encryptedResponse, {
             status: 200,

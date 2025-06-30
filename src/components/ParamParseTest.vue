@@ -96,7 +96,7 @@ import { hkdf } from '@noble/hashes/hkdf';
 import { sha256 } from '@noble/hashes/sha2';
 
 const password = ref('123');
-const inputText = ref('{"template":2}');
+const inputText = ref('{"color": "colorful",\n"diversity": "high",\n "urls": {\n"1": "",\n"2": ""}}');
 const encryptedOutput = ref('');
 const decryptedResponse = ref('');
 const isLoading = ref(false);
@@ -322,7 +322,7 @@ async function handleApiRequest() {
 label {
   margin-bottom: 8px;
   font-weight: bold;
-  color: #333;
+  color: #a0c2d6;
   font-size: 14px;
 }
 
@@ -357,19 +357,19 @@ label {
 }
 
 .encrypt-button {
-  background-color: #28a745;
+  background-color: #84b490;
 }
 
 .encrypt-button:hover:not(:disabled) {
-  background-color: #218838;
+  background-color: #a6d3b0;
 }
 
 .api-button {
-  background-color: #007bff;
+  background-color: #bbaf8e;
 }
 
 .api-button:hover:not(:disabled) {
-  background-color: #0056b3;
+  background-color: #ccb69a;
 }
 
 .response-container {
@@ -383,6 +383,7 @@ label {
   position: relative;
   flex: 1;
   padding: 10px;
+  text-align: left;
   border: 1px solid #ddd;
   border-radius: 4px;
   overflow: auto;
@@ -395,8 +396,8 @@ label {
   font-family: monospace;
   font-size: 14px;
   white-space: pre-wrap;
-  word-break: break-all;
-  overflow-wrap: anywhere;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .placeholder {
@@ -410,13 +411,14 @@ label {
 }
 
 .copy-button {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+  position: sticky;
+  top: 0px;
+  right: 0px;
+  float: right;
   background: rgba(0, 0, 0, 0);
   border: 1px solid #ddd;
   border-radius: 4px;
-  padding: 4px 8px;
+  padding: 4px 6px;
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.2s;
@@ -424,6 +426,6 @@ label {
 }
 
 .copy-button:hover {
-  border-color: #007bff;
+  border-color: #a0c2d6;
 }
 </style>

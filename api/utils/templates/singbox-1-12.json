@@ -47,10 +47,18 @@
         ],
         "action": "route",
         "server": "dns_fakeip"
+      },
+      {
+        "query_type": [
+          "HTTPS",
+          "SVCB"
+        ],
+        "action": "reject"
       }
     ],
     "final": "dns_proxy",
-    "strategy": "ipv4_only"
+    "strategy": "ipv4_only",
+    "independent_cache": true
   },
   "ntp": {"enabled":true,"server":"time.apple.com","server_port":123,"interval":"30m","detour":"DIRECT"},
   "inbounds": [
@@ -136,15 +144,7 @@
         "clash_mode": "Rule",
         "action": "route",
         "outbound": "AI"
-      },
-
-      {
-        "rule_set": ["geosite-geolocation-cn", "geoip-cn"],
-        "clash_mode": "Rule",
-        "action": "route",
-        "outbound": "DIRECT"
       }
-
 
     ],
     "rule_set": [
