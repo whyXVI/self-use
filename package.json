@@ -9,10 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hpcc-js/wasm": "^2.23.0",
+    "@noble/hashes": "^1.8.0",
     "js-base64": "^3.7.7",
     "vue": "^3.5.17"
   },
   "devDependencies": {
+    "@types/node": "^24.0.7",
     "@vitejs/plugin-vue": "^6.0.0",
     "@vue/tsconfig": "^0.7.0",
     "typescript": "~5.8.3",
