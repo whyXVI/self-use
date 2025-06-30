@@ -1,4 +1,4 @@
-import { encrypt, decrypt } from './utils/crypto';
+import { encrypt, decrypt } from './utils/crypto.js';
 
 export const maxDuration = 5;
 
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
         if (params && typeof params === 'object' && typeof params.url === 'string') {
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 4000);
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
                 
                 const fetchResponse = await fetch(params.url, {
                     signal: controller.signal,
