@@ -1,4 +1,10 @@
 {
+  "version": 2,
+  "functions": {
+    "api/generate.ts": {
+      "maxDuration": 3
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
