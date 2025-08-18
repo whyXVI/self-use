@@ -1,5 +1,5 @@
 {
-  "log": {"level": "debug"},
+  "log": { "level": "debug" },
   "dns": {
     "servers": [
       {
@@ -23,7 +23,7 @@
         "inet6_range": "fc00::/18"
       }
     ],
-    "rules": [    
+    "rules": [
       {
         "type": "logical",
         "mode": "and",
@@ -41,18 +41,12 @@
         "server": "dns_direct"
       },
       {
-        "query_type": [
-          "A",
-          "AAAA"
-        ],
+        "query_type": ["A", "AAAA"],
         "action": "route",
         "server": "dns_fakeip"
       },
       {
-        "query_type": [
-          "HTTPS",
-          "SVCB"
-        ],
+        "query_type": ["HTTPS", "SVCB"],
         "action": "reject"
       }
     ],
@@ -60,58 +54,63 @@
     "strategy": "ipv4_only",
     "independent_cache": true
   },
-  "ntp": {"enabled":true,"server":"time.apple.com","server_port":123,"interval":"30m","detour":"DIRECT"},
+  "ntp": {
+    "enabled": true,
+    "server": "time.apple.com",
+    "server_port": 123,
+    "interval": "30m",
+    "detour": "DIRECT"
+  },
   "inbounds": [
     {
       "tag": "tun-in",
       "type": "tun",
       "stack": "gvisor",
-      "address": [
-        "172.18.0.1/30",
-        "fdfe:dcba:9876::1/126"
-      ],
+      "address": ["172.18.0.1/30", "fdfe:dcba:9876::1/126"],
       "mtu": 9000,
       "auto_route": true,
-      "route_address": [
-        "0.0.0.0/1",
-        "128.0.0.0/1"
-      ],
-      "route_exclude_address": [
-        "192.168.0.0/16"
-      ]
+      "route_address": ["0.0.0.0/1", "128.0.0.0/1"],
+      "route_exclude_address": ["192.168.0.0/16"]
     }
   ],
   "outbounds": [
-    {"type":"direct","tag":"DIRECT"},{"type":"block","tag":"REJECT"},
+    { "type": "direct", "tag": "DIRECT" },
+    { "type": "block", "tag": "REJECT" },
     {
       "type": "selector",
       "tag": "PROXY",
 
-      "outbounds": [
-        "auto", "DIRECT"
-      ],
+      "outbounds": ["auto", "DIRECT"],
       "default": "auto"
     },
     {
       "type": "urltest",
       "tag": "auto",
 
-      "outbounds": [
-      ],
+      "outbounds": [],
       "url": "https://www.gstatic.com/generate_204",
       "interval": "3m",
       "tolerance": 400
     },
     {
-      "tag":"AI",
-      "type":"selector",
-      "outbounds":[
-      ]
+      "tag": "AI",
+      "type": "selector",
+      "outbounds": []
     }
   ],
   "route": {
-    "rules":[
-      
+    "rules": [
+      {
+        "clash_mode": "Global",
+        "action": "route",
+        "outbound": "PROXY"
+      },
+
+      {
+        "clash_mode": "Direct",
+        "action": "route",
+        "outbound": "DIRECT"
+      },
       {
         "inbound": "tun-in",
         "action": "sniff",
@@ -129,26 +128,14 @@
       },
 
       {
-        "clash_mode": "Direct",
-        "action": "route",
-        "outbound": "DIRECT"
-      },
-      {
-        "clash_mode": "Global",
-        "action": "route",
-        "outbound": "PROXY"
-      },
-
-      {
         "rule_set": "ai-non-ip",
         "clash_mode": "Rule",
         "action": "route",
         "outbound": "AI"
       }
-
     ],
     "rule_set": [
-      { 
+      {
         "tag": "geoip-cn",
         "type": "remote",
         "format": "binary",
@@ -177,7 +164,8 @@
         "download_detour": "PROXY"
       }
     ],
-    "final": "PROXY"
+    "final": "PROXY",
+    "default_domain_resolver": "dns_local"
   },
   "experimental": {
     "cache_file": {
