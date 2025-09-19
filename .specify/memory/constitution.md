@@ -1,10 +1,11 @@
 <!--
 Sync Impact Report:
-- Version change: [CONSTITUTION_VERSION] → 1.0.0
-- Initial constitution creation for steganographic art project
-- Added sections: Creative disguise principles, dual-purpose architecture, experimental approach
-- Templates requiring updates: ✅ Updated to reflect creative experimentation focus
-- Follow-up TODOs: None (all placeholders filled for creative project)
+- Version change: 1.0.0 → 1.1.0
+- Modified Principle V: Removed easter egg discovery requirement
+- Updated: "Intuitive Discovery" → "Direct Accessibility" 
+- Rationale: MINOR version bump - materially expanded guidance toward direct usability
+- Templates requiring updates: ✅ All templates reviewed, no updates needed
+- Follow-up TODOs: None
 -->
 
 # Proxy Art Constitution
@@ -31,10 +32,10 @@ VPN functionality MUST remain completely hidden behind creative interfaces. Pass
 
 **Rationale**: Security through obscurity is intentional - the goal is to hide functionality, not advertise it.
 
-### V. Intuitive Discovery
-Hidden features SHOULD be discoverable through creative exploration rather than documentation. Easter eggs, visual cues, and artistic metaphors MAY guide knowledgeable users to VPN functionality. The learning curve SHOULD feel like artistic discovery, not technical configuration.
+### V. Complete Steganographic Concealment
+Hidden VPN functionality MUST be completely invisible to ordinary users. No easter eggs, visual cues, or discoverable hints SHALL be present in the public interface. The website MUST appear as a purely legitimate generative art platform to casual visitors. Access to hidden features SHALL only be possible through predetermined authentication methods known exclusively to authorized users.
 
-**Rationale**: The user experience should feel magical and artistic, with technical functionality emerging naturally from creative interaction.
+**Rationale**: Perfect concealment requires that ordinary users see absolutely nothing suspicious - the art website must be completely convincing with zero hints of hidden functionality.
 
 ## Creative Standards
 
@@ -54,4 +55,4 @@ This constitution celebrates creative experimentation over rigid engineering pra
 
 All development decisions MUST consider both artistic impact and steganographic effectiveness. Code reviews SHALL evaluate creative merit alongside functional correctness. Complexity is justified when it enhances the artistic disguise or creates more compelling visual outputs.
 
-**Version**: 1.0.0 | **Ratified**: 2025-09-19 | **Last Amended**: 2025-09-19
+**Version**: 1.1.0 | **Ratified**: 2025-09-19 | **Last Amended**: 2025-09-19
