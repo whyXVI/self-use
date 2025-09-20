@@ -5,8 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:vercel": "vercel dev --listen 3000",
+    "dev:full": "concurrently \"vercel dev --listen 3000\" \"vite\"",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@hpcc-js/wasm": "^2.23.0",
@@ -19,9 +24,14 @@
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.0.7",
     "@vitejs/plugin-vue": "^6.0.0",
+    "@vitest/ui": "^3.2.4",
+    "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.7.0",
+    "concurrently": "^9.2.1",
+    "jsdom": "^27.0.0",
     "typescript": "~5.8.3",
     "vite": "^7.0.0",
+    "vitest": "^3.2.4",
     "vue-tsc": "^2.2.10"
   }
 }

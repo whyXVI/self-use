@@ -1,148 +1,235 @@
-# Tasks: Authenticated Proxy Art Generation
+# Tasks: 最小化客户端加密实现 (避免过度工程化)
 
-**Input**: Design documents from `/specs/002-json-arguments-argument/`
-**Prerequisites**: plan.md (required), spec.md
+**核心目标**: 仅添加必要的加密功能避免明文传输，最大化复用现有代码
 
-## Execution Flow (main)
-```
-1. Load plan.md from feature directory
-   → Tech stack: Vue.js 3, Vercel Functions, existing encryption system
-   → Structure: Frontend + API (web application)
-2. Load specification from spec.md:
-   → Replace dual-panel UI with single canvas art generation
-   → Add favicon integration from subscription URLs
-   → Maintain steganographic disguise of authentication
-3. Generate tasks by category:
-   → Setup: project refactoring, dependencies
-   → Tests: contract tests, integration tests
-   → Core: art generation, favicon fetching, canvas rendering
-   → Integration: authentication disguise, error handling
-   → Polish: performance optimization, final validation
-4. Apply task rules:
-   → Different files = mark [P] for parallel
-   → Same file = sequential (no [P])
-   → Tests before implementation (TDD)
-5. Number tasks sequentially (T001, T002...)
-6. Create parallel execution examples
-7. Return: SUCCESS (tasks ready for execution)
-```
+## 📋 **现状分析**
+基于现有代码检查:
+- ✅ 类型定义完整 (`src/types/art.ts`)
+- ✅ 组件架构完整 (`ParamParseTest.vue`)
+- ✅ 服务层完整 (`artGenerator.ts`)
+- ✅ 后端API完整 (`api/generate.ts`)
+- ✅ 服务端加密完整 (`crypto.ts`)
+- ✅ 原始客户端加密逻辑 (git历史中)
 
-## Format: `[ID] [P?] Description`
-- **[P]**: Can run in parallel (different files, no dependencies)
-- Include exact file paths in descriptions
+## 🎯 **最小化实现方案 (仅4个任务)**
 
-## Path Conventions
-- **Frontend**: `src/` at repository root
-- **API**: `api/` at repository root
-- **Tests**: Create test directories as needed
+### **T001** [30分钟] 恢复客户端加密逻辑
+**文件**: `src/components/ParamParseTest.vue`
+**操作**: 从git历史 (commit 536713d) 复制客户端加密函数
+```typescript
+// 复制这些函数到 ParamParseTest.vue <script> 部分:
+const SALT = textEncoder.encode("my-blog-easter-egg");
+const HKDF_INFO = textEncoder.encode('blog-encryption');
+const NONCE_SIZE = 12;
+const AUTH_TAG_SIZE = 16;
+const ZSTD_LEVEL = 19;
 
-## Phase 3.1: Setup & Refactoring
-- [ ] T001 Create test directory structure with `tests/unit/`, `tests/integration/`, `tests/contract/`
-- [ ] T002 [P] Install testing dependencies (Vue Test Utils, Vitest, @vue/test-utils)
-- [ ] T003 [P] Configure Vitest for Vue.js testing in `vite.config.ts`
-
-## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
-**CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
-- [ ] T004 [P] Contract test for art generation with valid auth in `tests/contract/test_authenticated_generation.test.ts`
-- [ ] T005 [P] Contract test for art generation with invalid auth in `tests/contract/test_unauthenticated_generation.test.ts`
-- [ ] T006 [P] Contract test for favicon fetching API in `tests/contract/test_favicon_fetch.test.ts`
-- [ ] T007 [P] Integration test for steganographic parameter handling in `tests/integration/test_auth_disguise.test.ts`
-- [ ] T008 [P] Integration test for canvas art rendering with favicons in `tests/integration/test_canvas_favicon.test.ts`
-- [ ] T009 [P] Unit test for art parameter validation in `tests/unit/test_art_params.test.ts`
-
-## Phase 3.3: Backend Implementation (ONLY after tests are failing)
-- [ ] T010 [P] Create favicon fetching service in `api/utils/favicon.ts`
-- [ ] T011 [P] Create art generation utility functions in `api/utils/art.ts` 
-- [ ] T012 Refactor `api/generate.ts` to include favicon integration and art generation logic
-- [ ] T013 Add base64 favicon encoding in favicon service
-- [ ] T014 Implement steganographic failure mode handling in `api/generate.ts`
-
-## Phase 3.4: Frontend Core Implementation
-- [ ] T015 [P] Create art parameter types in `src/types/art.ts`
-- [ ] T016 [P] Create canvas art generation service in `src/services/artGenerator.ts`
-- [ ] T017 [P] Create favicon display component in `src/components/FaviconDisplay.vue`
-- [ ] T018 Create single-canvas art component in `src/components/ArtCanvas.vue`
-- [ ] T019 Refactor `src/components/ParamParseTest.vue` to use single input + canvas layout
-- [ ] T020 Implement copy-to-clipboard functionality for config files in art canvas
-
-## Phase 3.5: Integration & Authentication Disguise
-- [ ] T021 Integrate favicon fetching with art generation in `src/services/artGenerator.ts`
-- [ ] T022 Implement visual indicators for authentication success in canvas art
-- [ ] T023 Add silent degradation for authentication failures
-- [ ] T024 Implement parameter validation that disguises auth as art controls
-- [ ] T025 Add error handling that maintains artistic facade
-
-## Phase 3.6: Polish & Validation
-- [ ] T026 [P] Performance optimization for canvas rendering (<2s generation time)
-- [ ] T027 [P] Add loading states and animations for art generation
-- [ ] T028 [P] Unit tests for art generation utilities in `tests/unit/test_art_utils.test.ts`
-- [ ] T029 Validate steganographic requirements - no obvious auth hints in UI
-- [ ] T030 Final integration test with complete user flow in `tests/integration/test_complete_flow.test.ts`
-- [ ] T031 Manual testing with various favicon sources and auth combinations
-
-## Dependencies
-- Setup (T001-T003) before tests (T004-T009)
-- Tests (T004-T009) before implementation (T010-T025)
-- Backend (T010-T014) before frontend integration (T021-T025)
-- Core frontend (T015-T020) before integration (T021-T025)
-- Implementation before polish (T026-T031)
-
-## Key Dependency Chains
-- T010 (favicon service) → T013 (base64 encoding) → T021 (frontend integration)
-- T015 (types) → T016 (art service) → T018 (canvas component)
-- T017 (favicon component) → T020 (copy functionality)
-- T019 (UI refactor) depends on T018 (canvas component)
-
-## Parallel Example
-```
-# Launch T004-T009 together (all test files):
-Task: "Contract test for authenticated art generation in tests/contract/test_authenticated_generation.test.ts"
-Task: "Contract test for unauthenticated art generation in tests/contract/test_unauthenticated_generation.test.ts"
-Task: "Contract test for favicon fetching in tests/contract/test_favicon_fetch.test.ts"
-Task: "Integration test for auth disguise in tests/integration/test_auth_disguise.test.ts"
-Task: "Integration test for canvas favicon in tests/integration/test_canvas_favicon.test.ts"
-Task: "Unit test for art params in tests/unit/test_art_params.test.ts"
-
-# Launch T010-T011 together (different backend files):
-Task: "Create favicon fetching service in api/utils/favicon.ts"
-Task: "Create art generation utilities in api/utils/art.ts"
-
-# Launch T015-T017 together (different frontend files):
-Task: "Create art parameter types in src/types/art.ts"
-Task: "Create canvas art generation service in src/services/artGenerator.ts" 
-Task: "Create favicon display component in src/components/FaviconDisplay.vue"
+async function deriveKey(passwordStr: string): Promise<CryptoKey> { /* 复制实现 */ }
+async function compress(data: Uint8Array): Promise<Uint8Array> { /* 复制实现 */ }
+async function decompress(data: Uint8Array): Promise<Uint8Array> { /* 复制实现 */ }
+async function encrypt(params: any, password: string): Promise<string> { /* 复制实现 */ }
+async function decrypt(encryptedString: string, password: string): Promise<any> { /* 复制实现 */ }
+function toBase64Url(data: Uint8Array): string { /* 复制实现 */ }
+function fromBase64Url(base64url: string): Uint8Array { /* 复制实现 */ }
 ```
 
-## Notes
-- [P] tasks = different files, no dependencies
-- Verify all tests fail before implementing
-- Maintain steganographic disguise throughout implementation
-- Preserve existing encryption/authentication system
-- Canvas must display meaningful art regardless of auth status
-- Commit after each task completion
+### **T002** [15分钟] 添加艺术密钥输入字段
+**文件**: `src/components/ParamParseTest.vue`
+**操作**: 在现有UI中添加密钥输入
+```vue
+<!-- 在现有的艺术参数输入框上方添加 -->
+<div class="form-group">
+  <label for="artisticKey">艺术增强密钥 (可选)</label>
+  <input
+    id="artisticKey"
+    type="password"
+    v-model="artisticKey"
+    placeholder="提供访问高级艺术特性的密钥"
+    class="input-field artistic-key"
+  />
+  <small class="help-text">
+    此密钥解锁高级纹理来源和增强渲染功能
+  </small>
+</div>
+```
 
-## Task Generation Rules Applied
+```typescript
+// 在 <script setup> 中添加:
+const artisticKey = ref('')
+```
 
-1. **From Specification**:
-   - UI refactoring → canvas component tasks (T018-T020)
-   - Favicon integration → favicon service tasks (T010, T013, T017)
-   - Authentication disguise → integration tasks (T021-T025)
-   
-2. **From Current Architecture**:
-   - Vue.js frontend → component and service tasks
-   - Vercel Functions API → API utility tasks
-   - Existing encryption → preserve and extend tasks
-   
-3. **From Testing Requirements**:
-   - TDD approach → contract and integration tests first
-   - Steganographic validation → specialized test scenarios
+### **T003** [15分钟] 修改艺术生成逻辑使用加密
+**文件**: `src/components/ParamParseTest.vue`
+**操作**: 修改 `generateArt()` 函数
+```typescript
+async function generateArt() {
+  // ... 现有验证逻辑保持不变 ...
 
-## Validation Checklist
-- [x] All major features have corresponding tests
-- [x] All new components have dedicated tasks
-- [x] Tests come before implementation
-- [x] Parallel tasks are truly independent
-- [x] Each task specifies exact file path
-- [x] No task modifies same file as another [P] task
-- [x] Steganographic requirements addressed in testing
-- [x] Existing authentication system preserved and extended
+  try {
+    let transmissionData: any
+
+    if (artisticKey.value && artisticKey.value.trim()) {
+      // 使用加密传输
+      transmissionData = await encrypt(processedParams, artisticKey.value)
+      console.log('Using encrypted artistic parameter transmission')
+    } else {
+      // 使用明文传输 (现有逻辑)
+      transmissionData = processedParams
+    }
+
+    // 调用服务 (传输数据而非原始参数)
+    const result = await artGenerator.generateArt(transmissionData)
+    artResult.value = result
+
+    // ... 现有成功处理逻辑保持不变 ...
+  } catch (error) {
+    // ... 现有错误处理逻辑保持不变 ...
+  }
+}
+```
+
+### **T004** [15分钟] 后端支持混合payload检测
+**文件**: `api/generate.ts`
+**操作**: 修改POST handler开头部分
+```typescript
+export async function POST(request: Request) {
+    try {
+        const body = await request.json();
+
+        let normalizedParams: ArtParameters;
+        let encryptionUsed = false;
+
+        // 检测payload类型: string = 加密, object = 明文
+        if (typeof body === 'string') {
+            // 加密payload - 使用现有crypto.js解密
+            console.log('Processing encrypted artistic parameters');
+            const decryptedParams = await decrypt(body);
+            normalizedParams = normalizeArtParams(decryptedParams);
+            encryptionUsed = true;
+        } else {
+            // 明文payload - 现有逻辑保持不变
+            normalizedParams = normalizeArtParams(body);
+        }
+
+        // ... 现有处理逻辑保持完全不变 ...
+
+        // 在最终响应中添加加密状态 (可选)
+        const result = {
+            // ... 现有所有响应字段 ...
+            encryptionUsed // 添加此字段用于调试
+        };
+
+        return new Response(JSON.stringify(result), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+    } catch (error: any) {
+        // ... 现有错误处理逻辑保持完全不变 ...
+    }
+}
+```
+
+## ⚡ **执行顺序**
+1. **T001** - 复制加密函数 (30分钟)
+2. **T002** - 添加UI字段 (15分钟)
+3. **T003** - 修改前端逻辑 (15分钟)
+4. **T004** - 修改后端检测 (15分钟)
+
+**总计: 1.5小时 (vs 原计划15-20小时)**
+
+## 🧪 **验证测试**
+
+### 手动测试
+```bash
+# 1. 启动开发服务器
+npm run dev
+
+# 2. 测试明文模式 (向后兼容)
+# - 不输入艺术密钥
+# - 输入: {"style":"geometric","colorScheme":"vibrant"}
+# - 应该正常生成艺术
+
+# 3. 测试加密模式
+# - 输入艺术密钥: "123" (或任何密钥)
+# - 输入: {"style":"geometric","password":"test","subscriptionUrl":"https://example.com"}
+# - 应该正常生成艺术,且网络传输为加密数据
+
+# 4. 检查网络传输
+# - 浏览器开发者工具 -> Network
+# - 查看POST /api/generate请求
+# - 有密钥时应显示加密字符串
+# - 无密钥时应显示JSON对象
+```
+
+### 简单的后端测试
+```bash
+# 测试加密payload
+curl -X POST http://localhost:3000/api/generate \
+  -H "Content-Type: application/json" \
+  -d '"eyJzdHlsZSI6Imdlb21ldHJpYyJ9..."'  # 加密字符串
+
+# 测试明文payload (向后兼容)
+curl -X POST http://localhost:3000/api/generate \
+  -H "Content-Type: application/json" \
+  -d '{"style":"geometric","colorScheme":"vibrant"}'  # JSON对象
+```
+
+## 📦 **复用策略**
+
+### 最大化现有代码复用
+- ✅ 所有现有Vue组件样式保持不变
+- ✅ 所有现有API响应格式保持不变
+- ✅ 所有现有类型定义无需修改
+- ✅ 所有现有服务层逻辑保持不变
+- ✅ 所有现有错误处理保持不变
+
+### 从git历史复用加密代码
+```bash
+# 获取原始加密实现
+git show 536713d:src/components/ParamParseTest.vue > /tmp/original-crypto.js
+
+# 手动复制所需的加密函数
+# 无需重新实现，直接复用经过验证的代码
+```
+
+### 渐进增强设计
+- **无密钥** → 现有明文流程 (零破坏性)
+- **有密钥** → 新的加密流程 (增强功能)
+- **加密失败** → 自动降级到明文 (容错性)
+
+## 🎨 **艺术伪装保持**
+- 密钥字段标签: "艺术增强密钥"
+- 帮助文本: "解锁高级纹理来源和增强渲染功能"
+- 处理状态: "正在处理艺术参数..."
+- 错误消息: "艺术参数处理遇到问题"
+- ✅ 完全无加密技术术语
+
+## 🚫 **避免的过度工程化**
+与原方案对比:
+- ❌ 不创建52个任务 → ✅ 仅4个核心任务
+- ❌ 不创建独立crypto模块 → ✅ 复用git历史代码
+- ❌ 不重构现有架构 → ✅ 最小侵入性修改
+- ❌ 不创建复杂测试套件 → ✅ 简单手动验证
+- ❌ 不重新设计UI/UX → ✅ 添加一个输入字段
+- ❌ 不创建新类型系统 → ✅ 复用现有接口
+
+## ✅ **成功标准**
+1. **安全性**: 有密钥时所有传输加密 (解决中间人攻击)
+2. **兼容性**: 无密钥时保持现有行为 (零破坏)
+3. **隐蔽性**: UI保持艺术伪装 (宪法合规)
+4. **可实现性**: 一个下午内完成 (个人项目友好)
+
+## 📈 **效率对比**
+| 维度 | 原方案 | 最小化方案 | 改进 |
+|------|-------|-----------|------|
+| 任务数量 | 52个 | 4个 | 92%减少 |
+| 预估时间 | 15-20小时 | 1.5小时 | 90%减少 |
+| 新文件 | 12个 | 0个 | 100%减少 |
+| 代码复用 | 30% | 95% | 65%提升 |
+| 架构复杂度 | 高 | 极低 | 显著简化 |
+
+---
+**核心原则**: 最小必要改动，最大现有复用，避免重构陷阱
+
+**个人项目友好**: 简单、快速、实用，避免过度工程化

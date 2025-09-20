@@ -1,431 +1,400 @@
 <template>
-  <div class="param-parse-test">
+  <div class="art-generator">
     <div class="container">
-      <div class="left-panel">
+      <!-- Single Input Panel -->
+      <div class="input-panel">
         <div class="form-group">
-          <label for="password">ENCRYPTION_PASSWORD</label>
-          <input 
-            id="password"
-            type="password" 
-            v-model="password" 
-            placeholder="Enter encryption password"
-            class="input-field"
-          />
-        </div>
-        <div class="form-group textarea-group">
-          <label for="params">JSON Parameters</label>
+          <label for="params">Art Generation Parameters</label>
           <textarea 
             id="params"
-            v-model="inputText" 
-            placeholder="{&#10;  &quot;message&quot;: &quot;Hello World&quot;&#10;}"
+            v-model="artParams" 
+            placeholder="{&#10;  &quot;style&quot;: &quot;geometric&quot;,&#10;  &quot;colorScheme&quot;: &quot;vibrant&quot;,&#10;  &quot;complexity&quot;: &quot;medium&quot;&#10;}"
             class="input-textarea"
           ></textarea>
         </div>
-        <button @click="handleEncrypt" :disabled="isLoading" class="action-button encrypt-button">
-          {{ isLoading ? 'Encrypting...' : '1. Encrypt on Client' }}
-        </button>
         
-        <button 
-          @click="handleApiRequest" 
-          :disabled="!encryptedOutput || isLoadingApi" 
-          class="action-button api-button"
-        >
-          {{ isLoadingApi ? 'Requesting...' : '2. Send Request to API' }}
-        </button>
+        <div class="generation-controls">
+          <button 
+            @click="generateArt" 
+            :disabled="isGenerating || !artParams.trim()" 
+            class="action-button generate-button"
+          >
+            {{ isGenerating ? 'Generating Art...' : '🎨 Generate Art' }}
+          </button>
+          
+          <div class="parameter-hints">
+            <p>Core: style, colorScheme, complexity, resolution</p>
+            <p>Enhanced: password (brush intensity), subscriptionUrl (texture source)</p>
+            <p>Alternative: brushStroke, canvasTexture, renderMode</p>
+          </div>
         </div>
+
+        <!-- Error Display -->
+        <div v-if="errorMessage" class="error-display">
+          <p class="error-message">{{ errorMessage }}</p>
+        </div>
+      </div>
       
-      <div class="right-panel">
-        <div class="response-container">
-            <label>Encrypted Seed (Base64Url)</label>
-            <div class="response-area">
-                <button 
-                  v-if="encryptedOutput && !errorMessage" 
-                  @click="copyToClipboard(encryptedOutput)"
-                  class="copy-button"
-                  title="Copy to clipboard"
-                >
-                  📋
-                </button>
-                <pre v-if="errorMessage" class="error-message">{{ errorMessage }}</pre>
-                <pre v-else-if="encryptedOutput">{{ encryptedOutput }}</pre>
-                <p v-else class="placeholder">Waiting for encryption result...</p>
-            </div>
+      <!-- Single Canvas Result -->
+      <div class="canvas-panel">
+        <ArtCanvas 
+          v-if="artResult"
+          :artData="artResult"
+          :canvasWidth="800"
+          :canvasHeight="600"
+          @configCopied="onConfigCopied"
+          @canvasClick="onCanvasClick"
+        />
+        
+        <!-- Placeholder when no art -->
+        <div v-else class="canvas-placeholder">
+          <div class="placeholder-content">
+            <div class="placeholder-icon">🎨</div>
+            <h3>Artistic Canvas</h3>
+            <p>Enter parameters above and generate to see your art composition</p>
+          </div>
         </div>
+      </div>
+    </div>
 
-        <div class="response-container">
-            <label>API Response (`/api/generate`)</label>
-            <div class="response-area">
-                <button 
-                  v-if="apiResponse && !apiError" 
-                  @click="copyToClipboard(apiResponse)"
-                  class="copy-button"
-                  title="Copy to clipboard"
-                >
-                  📋
-                </button>
-                <pre v-if="apiError" class="error-message">{{ apiError }}</pre>
-                <pre v-else-if="apiResponse">{{ apiResponse }}</pre>
-                <p v-else class="placeholder">Waiting for API response...</p>
-            </div>
-        </div>
-        <div class="response-container">
-            <label>Decrypted Response</label>
-            <div class="response-area">
-                <button 
-                  v-if="decryptedResponse" 
-                  @click="copyToClipboard(JSON.stringify(decryptedResponse, null, 2))"
-                  class="copy-button"
-                  title="Copy to clipboard"
-                >
-                  📋
-                </button>
-                <pre v-if="decryptedResponse">{{ JSON.stringify(decryptedResponse, null, 2) }}</pre>
-                <p v-else class="placeholder">Waiting for decryption result...</p>
-            </div>
-        </div>
-
-        </div>
+    <!-- Success Message -->
+    <div v-if="copySuccess" class="copy-notification">
+      {{ copySuccess }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Zstd } from '@hpcc-js/wasm';
-import { hkdf } from '@noble/hashes/hkdf';
-import { sha256 } from '@noble/hashes/sha2';
+import { ref } from 'vue'
+import { artGenerator } from '../services/artGenerator'
+import type { ArtGenerationResult } from '../types/art'
+import ArtCanvas from './ArtCanvas.vue'
 
-const password = ref('123');
-const inputText = ref('{"color": "colorful",\n"diversity": "high",\n "urls": {\n"1": "",\n"2": ""}}');
-const encryptedOutput = ref('');
-const decryptedResponse = ref('');
-const isLoading = ref(false);
-const errorMessage = ref('');
+// Component state
+const artParams = ref('{\n  "style": "geometric",\n  "colorScheme": "vibrant",\n  "complexity": "medium",\n  "password": "",\n  "subscriptionUrl": ""\n}')
+const artResult = ref<ArtGenerationResult | null>(null)
+const isGenerating = ref(false)
+const errorMessage = ref('')
+const copySuccess = ref('')
 
-const isLoadingApi = ref(false);
-const apiResponse = ref('');
-const apiError = ref('');
-
-const textEncoder = new TextEncoder();
-const SALT = textEncoder.encode("my-blog-easter-egg");
-const HKDF_INFO = textEncoder.encode('blog-encryption');
-const NONCE_SIZE = 12;
-const AUTH_TAG_SIZE = 16;
-const ZSTD_LEVEL = 19;
-
-async function copyToClipboard(text: string) {
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch (err) {
-    console.error('Failed to copy text: ', err);
-  }
-}
-
-async function deriveKey(passwordStr: string): Promise<CryptoKey> {
-    const passwordBytes = textEncoder.encode(passwordStr);
-    
-    const derivedKey = hkdf(
-        sha256,
-        passwordBytes,
-        SALT,
-        HKDF_INFO,
-        32
-    );
-    
-    return crypto.subtle.importKey(
-        "raw",
-        derivedKey,
-        { name: "AES-GCM" },
-        false,
-        ["encrypt", "decrypt"]  // Fixed: added decrypt permission
-    );
-}
-
-async function compress(data: Uint8Array): Promise<Uint8Array> {
-  const zstd = await Zstd.load();
-  return zstd.compress(data, ZSTD_LEVEL);
-}
-
-function toBase64Url(data: Uint8Array): string {
-  const binaryString = String.fromCharCode(...data);
-  const base64 = btoa(binaryString);
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
-
-async function handleEncrypt() {
-  if (!password.value || !inputText.value.trim()) {
-    errorMessage.value = 'Error: Both password and JSON parameters are required.';
-    encryptedOutput.value = '';
-    return;
+// Methods
+async function generateArt() {
+  if (!artParams.value.trim()) {
+    errorMessage.value = 'Please provide art generation parameters'
+    return
   }
 
-  isLoading.value = true;
-  errorMessage.value = '';
-  encryptedOutput.value = '';
-  apiResponse.value = '';
-  apiError.value = '';
+  isGenerating.value = true
+  errorMessage.value = ''
+  artResult.value = null
+  let paramsObject: any = {}
 
   try {
-    let paramsObject;
+    // Parse and validate parameters
     try {
-      paramsObject = JSON.parse(inputText.value);
+      paramsObject = JSON.parse(artParams.value)
     } catch (e) {
-      throw new Error("Invalid JSON format.");
+      // Maintain artistic facade even on JSON errors
+      errorMessage.value = 'Please check the artistic parameter format'
+      return
     }
 
-    const plaintext = textEncoder.encode(JSON.stringify(paramsObject));
-    const compressed = await compress(plaintext);
-    const key = await deriveKey(password.value);
-    const nonce = crypto.getRandomValues(new Uint8Array(NONCE_SIZE));
+    // Validate parameters with artistic error messages
+    const processedParams = artGenerator.processArtGeneration(paramsObject)
+    const validation = artGenerator.validateParameters(processedParams)
     
-    const encryptedResult = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv: nonce, tagLength: 128 },
-      key,
-      compressed
-    );
-    
-    const ciphertext = encryptedResult.slice(0, encryptedResult.byteLength - AUTH_TAG_SIZE);
-    const authTag = encryptedResult.slice(encryptedResult.byteLength - AUTH_TAG_SIZE);
-    
-    const payload = new Uint8Array(NONCE_SIZE + ciphertext.byteLength + AUTH_TAG_SIZE);
-    payload.set(nonce, 0);
-    payload.set(new Uint8Array(ciphertext), NONCE_SIZE);
-    payload.set(new Uint8Array(authTag), NONCE_SIZE + ciphertext.byteLength);
-    
-    encryptedOutput.value = toBase64Url(payload);
+    if (!validation.isValid) {
+      // Transform technical errors to artistic language
+      errorMessage.value = validation.errors.join('. ').replace(/parameter/gi, 'setting').replace(/auth/gi, 'enhancement')
+      return
+    }
+
+    // Generate art using the service (handles silent degradation internally)
+    const result = await artGenerator.generateArt(processedParams)
+    artResult.value = result
+
+    // Show generation success message (disguise authentication status)
+    if (result.authenticated) {
+      showCopySuccess('Art generated with enhanced artistic features!')
+    } else {
+      showCopySuccess('Art generated successfully!')
+    }
+
+    // Silent degradation - no error messages for failed authentication
+    // The system continues to generate art regardless of auth status
 
   } catch (error: any) {
-    errorMessage.value = `Encryption failed: ${error.message}`;
+    // Maintain artistic facade even on errors
+    errorMessage.value = 'Unable to complete artistic composition. Please adjust parameters.'
+    console.error('Art generation error:', error)
+    
+    // Even on error, try to show fallback art to maintain disguise
+    try {
+      const fallbackParams = paramsObject || {}
+      const fallbackResult = (artGenerator as any).generateFallbackArt(fallbackParams)
+      artResult.value = fallbackResult
+      showCopySuccess('Basic art composition generated')
+    } catch (fallbackError) {
+      console.error('Fallback art generation failed:', fallbackError)
+    }
   } finally {
-    isLoading.value = false;
+    isGenerating.value = false
   }
 }
 
-async function decompress(data: Uint8Array): Promise<Uint8Array> {
-  const zstd = await Zstd.load();
-  return zstd.decompress(data);
+function onConfigCopied(type: string, _content: string) {
+  showCopySuccess(`${type} configuration copied to clipboard`)
 }
 
-function fromBase64Url(base64url: string): Uint8Array {
-  let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
-  while (base64.length % 4) {
-    base64 += '=';
-  }
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
+function onCanvasClick(event: MouseEvent) {
+  // Handle canvas interactions - could be extended for interactive features
+  console.log('Canvas clicked at:', event.offsetX, event.offsetY)
 }
 
-async function decrypt(encryptedString: string, passwordStr: string): Promise<any> {
-  try {
-    const payload = fromBase64Url(encryptedString);
-    
-    const nonce = payload.slice(0, NONCE_SIZE);
-    const authTag = payload.slice(payload.length - AUTH_TAG_SIZE);
-    const ciphertext = payload.slice(NONCE_SIZE, payload.length - AUTH_TAG_SIZE);
-    
-    const key = await deriveKey(passwordStr);
-    
-    const encryptedData = new Uint8Array(ciphertext.length + authTag.length);
-    encryptedData.set(ciphertext, 0);
-    encryptedData.set(authTag, ciphertext.length);
-    
-    const compressed = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: nonce, tagLength: 128 },
-      key,
-      encryptedData
-    );
-    
-    const plaintext = await decompress(new Uint8Array(compressed));
-    
-    const textDecoder = new TextDecoder();
-    const jsonString = textDecoder.decode(plaintext);
-    return JSON.parse(jsonString);
-    
-  } catch (error: any) {
-    throw new Error(`Decryption failed: ${error.message}`);
-  }
+function showCopySuccess(message: string) {
+  copySuccess.value = message
+  setTimeout(() => {
+    copySuccess.value = ''
+  }, 3000)
 }
-
-async function handleApiRequest() {
-    if (!encryptedOutput.value) {
-        apiError.value = "Error: No encrypted seed available. Please generate one first.";
-        return;
-    }
-
-    isLoadingApi.value = true;
-    apiResponse.value = '';
-    apiError.value = '';
-
-    try {
-        const url = `/api/generate?seed=${encryptedOutput.value}`;
-        
-        const response = await fetch(url);
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`API request failed with status: ${response.status}. Response: ${errorText || '(empty)'}`);
-        }
-
-        apiResponse.value = await response.text();
-        
-
-    } catch (error: any) {
-        apiError.value = `API request error: ${error.message}`;
-    } finally {
-        isLoadingApi.value = false;
-    }
-    try {
-        decryptedResponse.value = await decrypt(apiResponse.value, password.value);
-    } catch (error: any) {
-        throw new Error(`Decryption of API response failed: ${error.message}`);
-    }
-}
-
 </script>
 
 <style scoped>
-/* Styles remain unchanged */
-.param-parse-test {
+.art-generator {
   width: 100%;
   height: 100vh;
   padding: 20px;
   box-sizing: border-box;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #333;
 }
 
 .container {
   display: flex;
   gap: 20px;
   height: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.left-panel, .right-panel {
-  flex: 1;
+.input-panel {
+  width: 350px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.canvas-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-}
-
-.form-group.textarea-group {
   flex: 1;
 }
 
 label {
   margin-bottom: 8px;
-  font-weight: bold;
-  color: #a0c2d6;
-  font-size: 14px;
-}
-
-.input-field, .input-textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 14px;
-  box-sizing: border-box;
+  font-weight: 600;
+  color: #495057;
+  font-size: 16px;
 }
 
 .input-textarea {
-  flex: 1;
-  resize: none;
+  width: 100%;
+  min-height: 200px;
+  padding: 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+  background: #f8f9fa;
+}
+
+.input-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+}
+
+.generation-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .action-button {
-  padding: 12px 20px;
+  padding: 12px 24px;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
-  transition: background-color 0.3s, opacity 0.3s;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-align: center;
 }
 
 .action-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
-.encrypt-button {
-  background-color: #84b490;
+.generate-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
 }
 
-.encrypt-button:hover:not(:disabled) {
-  background-color: #a6d3b0;
+.generate-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
-.api-button {
-  background-color: #bbaf8e;
+.parameter-hints {
+  padding: 12px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
 }
 
-.api-button:hover:not(:disabled) {
-  background-color: #ccb69a;
-}
-
-.response-container {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-}
-
-.response-area {
-  position: relative;
-  flex: 1;
-  padding: 10px;
-  text-align: left;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  overflow: auto;
-  word-break: break-all;
-  min-height: 120px;
-}
-
-.response-area pre {
-  margin: 0;
-  font-family: monospace;
-  font-size: 14px;
-  white-space: pre-wrap;
-  word-break: normal;
-  overflow-wrap: break-word;
-}
-
-.placeholder {
+.parameter-hints p {
+  margin: 4px 0;
+  font-size: 13px;
   color: #6c757d;
-  font-style: italic;
-  margin: 0;
+  line-height: 1.4;
+}
+
+.parameter-hints p:first-child {
+  font-weight: 500;
+  color: #495057;
+}
+
+.error-display {
+  padding: 12px;
+  background: linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%);
+  border-radius: 8px;
+  border-left: 4px solid #dc3545;
 }
 
 .error-message {
   color: #dc3545;
+  margin: 0;
+  font-weight: 500;
 }
 
-.copy-button {
-  position: sticky;
-  top: 0px;
-  right: 0px;
-  float: right;
-  background: rgba(0, 0, 0, 0);
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 4px 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
-  z-index: 1;
+.canvas-placeholder {
+  width: 800px;
+  height: 600px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 249, 250, 0.95) 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 2px dashed #dee2e6;
 }
 
-.copy-button:hover {
-  border-color: #a0c2d6;
+.placeholder-content {
+  text-align: center;
+  color: #6c757d;
+}
+
+.placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.placeholder-content h3 {
+  margin: 0 0 0.5rem 0;
+  color: #495057;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.placeholder-content p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  max-width: 300px;
+}
+
+.copy-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(40, 167, 69, 0.3);
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+  font-weight: 500;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+  .container {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .input-panel {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  
+  .canvas-placeholder {
+    width: 100%;
+    max-width: 800px;
+    height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .art-generator {
+    padding: 12px;
+  }
+  
+  .input-panel {
+    padding: 16px;
+  }
+  
+  .input-textarea {
+    min-height: 150px;
+  }
+  
+  .canvas-placeholder {
+    height: 300px;
+  }
 }
 </style>

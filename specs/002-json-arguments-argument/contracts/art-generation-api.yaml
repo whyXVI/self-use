@@ -1,0 +1,306 @@
+openapi: 3.0.3
+info:
+  title: Steganographic Art Generation API
+  description: API for generating artistic visualizations with optional steganographic features
+  version: 1.1.0
+  contact:
+    name: Art Generation Service
+    url: https://example.com/art
+
+servers:
+  - url: /api
+    description: Local development server
+
+paths:
+  /generate:
+    post:
+      summary: Generate artistic visualization
+      description: |
+        Create artistic visualizations from JSON parameters. Supports both standard
+        art generation and enhanced mode with additional features when artistic key provided.
+      operationId: generateArt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/PlaintextArtRequest'
+                - $ref: '#/components/schemas/EncryptedArtRequest'
+            examples:
+              basic_art:
+                summary: Basic art generation
+                value:
+                  style: "geometric"
+                  colorScheme: "vibrant"
+                  complexity: "medium"
+              enhanced_art:
+                summary: Enhanced art with steganographic parameters
+                value:
+                  style: "geometric"
+                  colorScheme: "vibrant"
+                  complexity: "medium"
+                  password: "artistic_key_123"
+                  subscriptionUrl: "https://example.com/config"
+              encrypted_art:
+                summary: Encrypted art parameters
+                value: "eyJhbGciOiJBRVMtR0NNIiwic3R5bGUiOiJnZW9tZXRyaWMifQ"
+      responses:
+        '200':
+          description: Art generation successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtGenerationResponse'
+              examples:
+                basic_response:
+                  summary: Basic art generation result
+                  value:
+                    artData: "data:image/svg+xml;base64,PHN2Zy4uLg=="
+                    authenticated: false
+                    encryptionUsed: false
+                    metadata:
+                      style: "geometric"
+                      complexity: "medium"
+                      authStatus: false
+                      encryptionStatus: "plaintext"
+                      generatedAt: "2025-09-20T12:00:00Z"
+                enhanced_response:
+                  summary: Enhanced art with config access
+                  value:
+                    artData: "data:image/svg+xml;base64,PHN2Zy4uLg=="
+                    authenticated: true
+                    encryptionUsed: true
+                    faviconData:
+                      faviconBase64: "iVBORw0KGgoAAAANSUhEUgAA..."
+                      mimeType: "image/png"
+                      encoded: "data:image/png;base64,iVBORw0KG..."
+                    configData:
+                      singbox: {"outbounds": []}
+                      clash: "proxies:\n  - name: example"
+                    metadata:
+                      style: "geometric"
+                      complexity: "medium"
+                      authStatus: true
+                      encryptionStatus: "encrypted"
+                      generatedAt: "2025-09-20T12:00:00Z"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Art generation service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: Legacy encrypted art generation
+      description: |
+        Legacy endpoint for encrypted art generation using URL-encoded parameters.
+        Maintained for backward compatibility.
+      operationId: generateArtLegacy
+      parameters:
+        - name: seed
+          in: query
+          required: true
+          description: Base64URL encoded encrypted art parameters
+          schema:
+            type: string
+            format: base64url
+      responses:
+        '200':
+          description: Encrypted art configuration response
+          content:
+            text/plain:
+              schema:
+                type: string
+                format: base64url
+                description: Base64URL encoded encrypted response
+        '400':
+          description: Invalid or missing seed parameter
+          content:
+            text/plain:
+              schema:
+                type: string
+
+components:
+  schemas:
+    PlaintextArtRequest:
+      type: object
+      description: Standard art generation parameters in plaintext
+      properties:
+        style:
+          type: string
+          enum: [geometric, abstract, flowing, structured, organic]
+          description: Artistic style for generation
+        colorScheme:
+          type: string
+          enum: [vibrant, monochrome, pastel, dark, dynamic]
+          description: Color palette scheme
+        complexity:
+          type: string
+          enum: [low, medium, high, ultra]
+          description: Complexity level of generated art
+        resolution:
+          type: string
+          enum: [low, medium, high, ultra]
+          description: Output resolution quality
+        # Steganographic fields (disguised as art parameters)
+        password:
+          type: string
+          description: Enhancement key for special features
+        subscriptionUrl:
+          type: string
+          format: uri
+          description: Texture source URL for enhanced generation
+        brushStroke:
+          type: string
+          description: Alternative enhancement parameter
+        canvasTexture:
+          type: string
+          description: Alternative texture source
+        renderMode:
+          type: string
+          description: Additional rendering parameter
+
+    EncryptedArtRequest:
+      type: string
+      format: base64url
+      description: Base64URL encoded encrypted art parameters
+      example: "eyJzdHlsZSI6Imdlb21ldHJpYyIsInBhc3N3b3JkIjoic2VjcmV0In0"
+
+    ArtGenerationResponse:
+      type: object
+      required:
+        - artData
+        - authenticated
+        - encryptionUsed
+        - metadata
+      properties:
+        artData:
+          type: string
+          format: base64
+          description: Base64 encoded SVG art data
+        authenticated:
+          type: boolean
+          description: Whether enhanced features were unlocked
+        encryptionUsed:
+          type: boolean
+          description: Whether request payload was encrypted
+        faviconData:
+          $ref: '#/components/schemas/FaviconData'
+        configData:
+          $ref: '#/components/schemas/ConfigData'
+        metadata:
+          $ref: '#/components/schemas/ArtMetadata'
+
+    FaviconData:
+      type: object
+      description: Favicon integration data for enhanced art
+      properties:
+        faviconBase64:
+          type: string
+          format: base64
+          description: Base64 encoded favicon image
+        mimeType:
+          type: string
+          description: MIME type of favicon
+        encoded:
+          type: string
+          description: Data URL encoded favicon
+        isDefault:
+          type: boolean
+          description: Whether default favicon was used
+
+    ConfigData:
+      type: object
+      description: Configuration data for enhanced features
+      properties:
+        singbox:
+          type: object
+          description: Structured configuration data
+        clash:
+          type: string
+          description: YAML formatted configuration
+
+    ArtMetadata:
+      type: object
+      required:
+        - style
+        - complexity
+        - authStatus
+        - encryptionStatus
+        - generatedAt
+      properties:
+        style:
+          type: string
+          description: Applied artistic style
+        complexity:
+          type: string
+          description: Applied complexity level
+        authStatus:
+          type: boolean
+          description: Authentication success status
+        encryptionStatus:
+          type: string
+          enum: [encrypted, plaintext, failed]
+          description: Encryption processing status
+        generatedAt:
+          type: string
+          format: date-time
+          description: Generation timestamp
+        validationErrors:
+          type: array
+          items:
+            type: string
+          description: Parameter validation issues
+        securityIndicators:
+          $ref: '#/components/schemas/SecurityIndicators'
+
+    SecurityIndicators:
+      type: object
+      description: Security processing metadata
+      properties:
+        transmissionSecure:
+          type: boolean
+          description: Whether payload transmission was secured
+        authenticationLevel:
+          type: string
+          enum: [none, basic, encrypted]
+          description: Level of authentication applied
+        integrityVerified:
+          type: boolean
+          description: Whether payload integrity was verified
+        compressionUsed:
+          type: boolean
+          description: Whether compression was applied
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error category
+        message:
+          type: string
+          description: Human-readable error message
+        artData:
+          type: string
+          format: base64
+          description: Fallback art data (maintains steganographic disguise)
+        metadata:
+          $ref: '#/components/schemas/ArtMetadata'
+
+  securitySchemes:
+    artisticKey:
+      type: apiKey
+      in: body
+      name: password
+      description: Artistic enhancement key embedded in request payload
