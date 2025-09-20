@@ -92,9 +92,42 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        
+
+        let normalizedParams: any;
+        let encryptionUsed = false;
+
+        // Detect payload type: string = encrypted, object = plaintext
+        if (typeof body === 'string') {
+            // Encrypted payload - use existing crypto.js to decrypt
+            console.log('Processing encrypted artistic parameters');
+            try {
+                const decryptedParams = await decrypt(body);
+                normalizedParams = normalizeArtParams(decryptedParams);
+                encryptionUsed = true;
+            } catch (decryptError) {
+                console.error('Failed to decrypt artistic parameters:', decryptError);
+                // Return artistic error message to maintain disguise
+                return new Response(JSON.stringify({
+                    artData: generateBaseArt({ style: 'geometric', complexity: 'low' }),
+                    authenticated: false,
+                    metadata: {
+                        style: 'geometric',
+                        complexity: 'low',
+                        authStatus: false,
+                        generatedAt: new Date().toISOString(),
+                        error: 'Unable to process artistic enhancement parameters'
+                    }
+                }), {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' },
+                });
+            }
+        } else {
+            // Plaintext payload - existing logic remains unchanged
+            normalizedParams = normalizeArtParams(body);
+        }
+
         // Normalize and validate art parameters
-        const normalizedParams = normalizeArtParams(body);
         const validation = validateArtParams(normalizedParams);
         
         if (!validation.isValid) {
@@ -189,10 +222,12 @@ export async function POST(request: Request) {
         const result: ArtGenerationResult = {
             artData,
             authenticated,
+            encryptionUsed,
             metadata: {
                 style: normalizedParams.style || 'geometric',
                 complexity: normalizedParams.complexity || 'medium',
                 authStatus: authenticated,
+                encryptionStatus: encryptionUsed ? 'encrypted' : 'plaintext',
                 generatedAt: new Date().toISOString()
             }
         };

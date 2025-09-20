@@ -13,7 +13,7 @@
 
 ## 🎯 **最小化实现方案 (仅4个任务)**
 
-### **T001** [30分钟] 恢复客户端加密逻辑
+### **T001** [30分钟] 恢复客户端加密逻辑 ✅
 **文件**: `src/components/ParamParseTest.vue`
 **操作**: 从git历史 (commit 536713d) 复制客户端加密函数
 ```typescript
@@ -33,7 +33,7 @@ function toBase64Url(data: Uint8Array): string { /* 复制实现 */ }
 function fromBase64Url(base64url: string): Uint8Array { /* 复制实现 */ }
 ```
 
-### **T002** [15分钟] 添加艺术密钥输入字段
+### **T002** [15分钟] 添加艺术密钥输入字段 ✅
 **文件**: `src/components/ParamParseTest.vue`
 **操作**: 在现有UI中添加密钥输入
 ```vue
@@ -58,7 +58,7 @@ function fromBase64Url(base64url: string): Uint8Array { /* 复制实现 */ }
 const artisticKey = ref('')
 ```
 
-### **T003** [15分钟] 修改艺术生成逻辑使用加密
+### **T003** [15分钟] 修改艺术生成逻辑使用加密 ✅
 **文件**: `src/components/ParamParseTest.vue`
 **操作**: 修改 `generateArt()` 函数
 ```typescript
@@ -88,7 +88,7 @@ async function generateArt() {
 }
 ```
 
-### **T004** [15分钟] 后端支持混合payload检测
+### **T004** [15分钟] 后端支持混合payload检测 ✅
 **文件**: `api/generate.ts`
 **操作**: 修改POST handler开头部分
 ```typescript

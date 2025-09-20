@@ -31,12 +31,14 @@ export interface ConfigData {
 export interface ArtGenerationResult {
   artData: string;
   authenticated: boolean;
+  encryptionUsed?: boolean;
   faviconData?: FaviconData;
   configData?: ConfigData;
   metadata: {
     style: string;
     complexity: string;
     authStatus: boolean;
+    encryptionStatus?: string;
     generatedAt: string;
     validationErrors?: string[];
     error?: string;

@@ -4,6 +4,20 @@
       <!-- Single Input Panel -->
       <div class="input-panel">
         <div class="form-group">
+          <label for="artisticKey">艺术增强密钥 (可选)</label>
+          <input
+            id="artisticKey"
+            type="password"
+            v-model="artisticKey"
+            placeholder="提供访问高级艺术特性的密钥"
+            class="input-field artistic-key"
+          />
+          <small class="help-text">
+            此密钥解锁高级纹理来源和增强渲染功能
+          </small>
+        </div>
+
+        <div class="form-group">
           <label for="params">Art Generation Parameters</label>
           <textarea 
             id="params"
@@ -71,6 +85,7 @@ import type { ArtGenerationResult } from '../types/art'
 import ArtCanvas from './ArtCanvas.vue'
 
 // Component state
+const artisticKey = ref('')
 const artParams = ref('{\n  "style": "geometric",\n  "colorScheme": "vibrant",\n  "complexity": "medium",\n  "password": "",\n  "subscriptionUrl": ""\n}')
 const artResult = ref<ArtGenerationResult | null>(null)
 const isGenerating = ref(false)
@@ -109,8 +124,24 @@ async function generateArt() {
       return
     }
 
-    // Generate art using the service (handles silent degradation internally)
-    const result = await artGenerator.generateArt(processedParams)
+    // Generate art using the service with encryption if artistic key provided
+    let transmissionData: any
+
+    if (artisticKey.value && artisticKey.value.trim()) {
+      // Use encrypted transmission for enhanced artistic features
+      try {
+        transmissionData = await encrypt(processedParams, artisticKey.value)
+        console.log('Using encrypted artistic parameter transmission')
+      } catch (encryptError) {
+        console.warn('Encryption failed, falling back to standard transmission:', encryptError)
+        transmissionData = processedParams
+      }
+    } else {
+      // Use standard transmission (existing logic)
+      transmissionData = processedParams
+    }
+
+    const result = await artGenerator.generateArt(transmissionData)
     artResult.value = result
 
     // Show generation success message (disguise authentication status)
@@ -157,6 +188,80 @@ function showCopySuccess(message: string) {
     copySuccess.value = ''
   }, 3000)
 }
+
+// =============================================================================
+// Client-side Encryption Functions (restored from git history 536713d)
+// =============================================================================
+
+import { Zstd } from '@hpcc-js/wasm'
+import { hkdf } from '@noble/hashes/hkdf'
+import { sha256 } from '@noble/hashes/sha2'
+
+const textEncoder = new TextEncoder()
+const SALT = textEncoder.encode("my-blog-easter-egg")
+const HKDF_INFO = textEncoder.encode('blog-encryption')
+const NONCE_SIZE = 12
+const AUTH_TAG_SIZE = 16
+const ZSTD_LEVEL = 19
+
+async function deriveKey(passwordStr: string): Promise<CryptoKey> {
+    const passwordBytes = textEncoder.encode(passwordStr)
+
+    const derivedKey = hkdf(
+        sha256,
+        passwordBytes,
+        SALT,
+        HKDF_INFO,
+        32
+    )
+
+    return crypto.subtle.importKey(
+        "raw",
+        derivedKey,
+        { name: "AES-GCM" },
+        false,
+        ["encrypt", "decrypt"]
+    )
+}
+
+async function compress(data: Uint8Array): Promise<Uint8Array> {
+  const zstd = await Zstd.load()
+  return zstd.compress(data, ZSTD_LEVEL)
+}
+
+
+function toBase64Url(data: Uint8Array): string {
+  const binaryString = String.fromCharCode(...data)
+  const base64 = btoa(binaryString)
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+}
+
+
+async function encrypt(params: any, password: string): Promise<string> {
+    const plaintext = textEncoder.encode(JSON.stringify(params))
+    const compressed = await compress(plaintext)
+    const key = await deriveKey(password)
+    const nonce = crypto.getRandomValues(new Uint8Array(NONCE_SIZE))
+
+    const encryptedResult = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: nonce, tagLength: 128 },
+      key,
+      compressed
+    )
+
+    const ciphertext = encryptedResult.slice(0, encryptedResult.byteLength - AUTH_TAG_SIZE)
+    const authTag = encryptedResult.slice(encryptedResult.byteLength - AUTH_TAG_SIZE)
+
+    const payload = new Uint8Array(NONCE_SIZE + ciphertext.byteLength + AUTH_TAG_SIZE)
+    payload.set(nonce, 0)
+    payload.set(new Uint8Array(ciphertext), NONCE_SIZE)
+    payload.set(new Uint8Array(authTag), NONCE_SIZE + ciphertext.byteLength)
+
+    return toBase64Url(payload)
+}
+
+// Decrypt function removed - not used in frontend component
+// Decryption is handled by the backend API
 </script>
 
 <style scoped>
@@ -229,6 +334,36 @@ label {
   outline: none;
   border-color: #667eea;
   background: white;
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+  background: #f8f9fa;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+}
+
+.artistic-key {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-left: 4px solid #667eea;
+}
+
+.help-text {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6c757d;
+  line-height: 1.4;
 }
 
 .generation-controls {
