@@ -270,8 +270,22 @@ async function encrypt(params: any, password: string): Promise<string> {
   height: 100vh;
   padding: 20px;
   box-sizing: border-box;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #333;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  color: #00ff41;
+  position: relative;
+}
+
+.art-generator::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(0, 255, 65, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 255, 65, 0.1) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 .container {
@@ -280,6 +294,8 @@ async function encrypt(params: any, password: string): Promise<string> {
   height: 100%;
   max-width: 1400px;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
 }
 
 .input-panel {
@@ -287,10 +303,11 @@ async function encrypt(params: any, password: string): Promise<string> {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(13, 17, 23, 0.95);
+  border: 1px solid #333;
   padding: 24px;
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 255, 65, 0.1);
   backdrop-filter: blur(10px);
 }
 
@@ -311,59 +328,80 @@ async function encrypt(params: any, password: string): Promise<string> {
 label {
   margin-bottom: 8px;
   font-weight: 600;
-  color: #495057;
+  color: #00ff41;
   font-size: 16px;
+  text-shadow: 0 0 2px #00ff41;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 
 .input-textarea {
   width: 100%;
   min-height: 200px;
   padding: 16px;
-  border: 2px solid #e9ecef;
+  border: 2px solid #333;
   border-radius: 8px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 14px;
   line-height: 1.6;
   resize: vertical;
   box-sizing: border-box;
-  transition: border-color 0.3s ease;
-  background: #f8f9fa;
+  transition: all 0.3s ease;
+  background: #1a1a1a;
+  color: #00ff41;
+  text-shadow: 0 0 2px #00ff41;
 }
 
 .input-textarea:focus {
   outline: none;
-  border-color: #667eea;
-  background: white;
+  border-color: #00ff41;
+  background: #0d1117;
+  box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+}
+
+.input-textarea::placeholder {
+  color: #006600;
+  opacity: 0.7;
 }
 
 .input-field {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e9ecef;
+  border: 2px solid #333;
   border-radius: 8px;
   font-size: 14px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   box-sizing: border-box;
-  transition: border-color 0.3s ease;
-  background: #f8f9fa;
+  transition: all 0.3s ease;
+  background: #1a1a1a;
+  color: #00ff41;
+  text-shadow: 0 0 2px #00ff41;
 }
 
 .input-field:focus {
   outline: none;
-  border-color: #667eea;
-  background: white;
+  border-color: #00ff41;
+  background: #0d1117;
+  box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+}
+
+.input-field::placeholder {
+  color: #006600;
+  opacity: 0.7;
 }
 
 .artistic-key {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-left: 4px solid #667eea;
+  background: linear-gradient(135deg, #0d1117 0%, #1a1a1a 100%);
+  border-left: 4px solid #00ff41;
+  box-shadow: 0 0 4px rgba(0, 255, 65, 0.2);
 }
 
 .help-text {
   margin-top: 6px;
   font-size: 12px;
-  color: #6c757d;
+  color: #00cc33;
   line-height: 1.4;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  opacity: 0.8;
 }
 
 .generation-controls {
@@ -402,65 +440,97 @@ label {
 
 .parameter-hints {
   padding: 12px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, #0d1117 0%, #1a1a1a 100%);
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #00ff41;
+  border: 1px solid #333;
 }
 
 .parameter-hints p {
   margin: 4px 0;
   font-size: 13px;
-  color: #6c757d;
+  color: #00cc33;
   line-height: 1.4;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 
 .parameter-hints p:first-child {
   font-weight: 500;
-  color: #495057;
+  color: #00ff41;
+  text-shadow: 0 0 2px #00ff41;
 }
 
 .error-display {
   padding: 12px;
-  background: linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%);
+  background: linear-gradient(135deg, #2d1b1b 0%, #3d1f1f 100%);
   border-radius: 8px;
-  border-left: 4px solid #dc3545;
+  border-left: 4px solid #ff4444;
+  border: 1px solid #ff4444;
+  box-shadow: 0 0 8px rgba(255, 68, 68, 0.2);
 }
 
 .error-message {
-  color: #dc3545;
+  color: #ff6666;
   margin: 0;
   font-weight: 500;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  text-shadow: 0 0 2px #ff6666;
 }
 
 .canvas-placeholder {
   width: 800px;
   height: 600px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 249, 250, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(13, 17, 23, 0.95) 0%, rgba(26, 26, 26, 0.95) 100%);
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 255, 65, 0.1);
   backdrop-filter: blur(10px);
-  border: 2px dashed #dee2e6;
+  border: 2px dashed #00ff41;
+  position: relative;
+  overflow: hidden;
+}
+
+.canvas-placeholder::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 20px,
+    rgba(0, 255, 65, 0.05) 20px,
+    rgba(0, 255, 65, 0.05) 40px
+  );
+  pointer-events: none;
 }
 
 .placeholder-content {
   text-align: center;
-  color: #6c757d;
+  color: #00cc33;
+  position: relative;
+  z-index: 1;
 }
 
 .placeholder-icon {
   font-size: 4rem;
   margin-bottom: 1rem;
-  opacity: 0.7;
+  opacity: 0.8;
+  color: #00ff41;
+  text-shadow: 0 0 10px #00ff41;
 }
 
 .placeholder-content h3 {
   margin: 0 0 0.5rem 0;
-  color: #495057;
+  color: #00ff41;
   font-size: 1.5rem;
   font-weight: 600;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  text-shadow: 0 0 4px #00ff41;
 }
 
 .placeholder-content p {
@@ -468,6 +538,8 @@ label {
   font-size: 1rem;
   line-height: 1.5;
   max-width: 300px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  opacity: 0.8;
 }
 
 .copy-notification {
