@@ -1,24 +1,23 @@
 <template>
   <div class="art-generator">
     <div class="container">
-      <!-- Single Input Panel -->
       <div class="input-panel">
         <div class="form-group">
-          <label for="artisticKey">艺术增强密钥 (可选)</label>
+          <label for="artisticKey">Enhanced access key</label>
           <input
             id="artisticKey"
             type="password"
             v-model="artisticKey"
-            placeholder="提供访问高级艺术特性的密钥"
+            placeholder="Optional passphrase for extended output"
             class="input-field artistic-key"
           />
           <small class="help-text">
-            此密钥解锁高级纹理来源和增强渲染功能
+            Leave blank for standard rendering. Provide a key to enable secured delivery.
           </small>
         </div>
 
-        <div class="form-group">
-          <label for="params">Art Generation Parameters</label>
+        <div class="form-group form-group--stretch">
+          <label for="params">Art generation parameters</label>
           <textarea 
             id="params"
             v-model="artParams" 
@@ -33,17 +32,19 @@
             :disabled="isGenerating || !artParams.trim()" 
             class="action-button generate-button"
           >
-            {{ isGenerating ? 'Generating Art...' : '🎨 Generate Art' }}
+            {{ isGenerating ? 'Rendering...' : 'Generate rendering' }}
           </button>
           
-          <div class="parameter-hints">
-            <p>Core: style, colorScheme, complexity, resolution</p>
-            <p>Enhanced: password (brush intensity), subscriptionUrl (texture source)</p>
-            <p>Alternative: brushStroke, canvasTexture, renderMode</p>
-          </div>
+          <section class="parameter-hints">
+            <header>Parameter guide</header>
+            <ul>
+              <li>Core: style, colorScheme, complexity, resolution</li>
+              <li>Secure fields: password, subscriptionUrl</li>
+              <li>Aliases: brushStroke -> password, canvasTexture -> subscriptionUrl</li>
+            </ul>
+          </section>
         </div>
 
-        <!-- Error Display -->
         <div v-if="errorMessage" class="error-display">
           <p class="error-message">{{ errorMessage }}</p>
         </div>
@@ -63,9 +64,8 @@
         <!-- Placeholder when no art -->
         <div v-else class="canvas-placeholder">
           <div class="placeholder-content">
-            <div class="placeholder-icon">🎨</div>
-            <h3>Artistic Canvas</h3>
-            <p>Enter parameters above and generate to see your art composition</p>
+            <h3>Canvas ready</h3>
+            <p>Provide parameters to render a composition.</p>
           </div>
         </div>
       </div>
@@ -110,7 +110,7 @@ async function generateArt() {
       paramsObject = JSON.parse(artParams.value)
     } catch (e) {
       // Maintain artistic facade even on JSON errors
-      errorMessage.value = 'Please check the artistic parameter format'
+      errorMessage.value = 'Check the parameter JSON structure'
       return
     }
 
@@ -146,9 +146,9 @@ async function generateArt() {
 
     // Show generation success message (disguise authentication status)
     if (result.authenticated) {
-      showCopySuccess('Art generated with enhanced artistic features!')
+      showCopySuccess('Enhanced rendering complete')
     } else {
-      showCopySuccess('Art generated successfully!')
+      showCopySuccess('Rendering complete')
     }
 
     // Silent degradation - no error messages for failed authentication
@@ -164,7 +164,7 @@ async function generateArt() {
       const fallbackParams = paramsObject || {}
       const fallbackResult = (artGenerator as any).generateFallbackArt(fallbackParams)
       artResult.value = fallbackResult
-      showCopySuccess('Basic art composition generated')
+      showCopySuccess('Fallback rendering available')
     } catch (fallbackError) {
       console.error('Fallback art generation failed:', fallbackError)
     }
@@ -174,7 +174,7 @@ async function generateArt() {
 }
 
 function onConfigCopied(type: string, _content: string) {
-  showCopySuccess(`${type} configuration copied to clipboard`)
+  showCopySuccess(`${type} configuration copied`)
 }
 
 function onCanvasClick(event: MouseEvent) {
@@ -266,342 +266,219 @@ async function encrypt(params: any, password: string): Promise<string> {
 
 <style scoped>
 .art-generator {
-  width: 100%;
-  height: 100vh;
-  padding: 20px;
-  box-sizing: border-box;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
-  color: #00ff41;
-  position: relative;
-}
-
-.art-generator::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background:
-    radial-gradient(circle at 20% 80%, rgba(0, 255, 65, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(0, 255, 65, 0.1) 0%, transparent 50%);
-  pointer-events: none;
+  min-height: 100vh;
+  padding: 32px 48px;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
 }
 
 .container {
   display: flex;
-  gap: 20px;
-  height: 100%;
-  max-width: 1400px;
+  gap: 40px;
+  align-items: stretch;
+  max-width: 1280px;
   margin: 0 auto;
-  position: relative;
-  z-index: 1;
 }
 
 .input-panel {
-  width: 350px;
+  width: 360px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  background: rgba(13, 17, 23, 0.95);
-  border: 1px solid #333;
+  gap: 24px;
   padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 255, 65, 0.1);
-  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .canvas-panel {
   flex: 1;
+  min-width: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 0;
+  padding: 24px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+}
+
+.form-group--stretch {
+  flex: 1;
+}
+
+.form-group--stretch .input-textarea {
   flex: 1;
 }
 
 label {
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #00ff41;
-  font-size: 16px;
-  text-shadow: 0 0 2px #00ff41;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-}
-
-.input-textarea {
-  width: 100%;
-  min-height: 200px;
-  padding: 16px;
-  border: 2px solid #333;
-  border-radius: 8px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 14px;
-  line-height: 1.6;
-  resize: vertical;
-  box-sizing: border-box;
-  transition: all 0.3s ease;
-  background: #1a1a1a;
-  color: #00ff41;
-  text-shadow: 0 0 2px #00ff41;
-}
-
-.input-textarea:focus {
-  outline: none;
-  border-color: #00ff41;
-  background: #0d1117;
-  box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
-}
-
-.input-textarea::placeholder {
-  color: #006600;
-  opacity: 0.7;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
 }
 
 .input-field {
-  width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #333;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  box-sizing: border-box;
-  transition: all 0.3s ease;
-  background: #1a1a1a;
-  color: #00ff41;
-  text-shadow: 0 0 2px #00ff41;
+  background: var(--color-surface-muted);
 }
 
-.input-field:focus {
-  outline: none;
-  border-color: #00ff41;
-  background: #0d1117;
-  box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+.input-textarea {
+  flex: 1;
+  min-height: 260px;
+  resize: vertical;
+  background: var(--color-surface-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
 }
 
-.input-field::placeholder {
-  color: #006600;
-  opacity: 0.7;
+.input-textarea::-webkit-scrollbar {
+  width: 6px;
 }
 
-.artistic-key {
-  background: linear-gradient(135deg, #0d1117 0%, #1a1a1a 100%);
-  border-left: 4px solid #00ff41;
-  box-shadow: 0 0 4px rgba(0, 255, 65, 0.2);
+.input-textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.input-textarea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
+
+.input-textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .help-text {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #00cc33;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
   line-height: 1.4;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  opacity: 0.8;
 }
 
 .generation-controls {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.action-button {
-  padding: 12px 24px;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  text-align: center;
-}
-
-.action-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
+  gap: 16px;
 }
 
 .generate-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+  align-self: flex-start;
 }
 
 .generate-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 .parameter-hints {
-  padding: 12px;
-  background: linear-gradient(135deg, #0d1117 0%, #1a1a1a 100%);
-  border-radius: 8px;
-  border-left: 4px solid #00ff41;
-  border: 1px solid #333;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 16px;
+  background: var(--color-surface-muted);
 }
 
-.parameter-hints p {
-  margin: 4px 0;
-  font-size: 13px;
-  color: #00cc33;
-  line-height: 1.4;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+.parameter-hints header {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
 }
 
-.parameter-hints p:first-child {
-  font-weight: 500;
-  color: #00ff41;
-  text-shadow: 0 0 2px #00ff41;
+.parameter-hints ul {
+  list-style: disc;
+  padding-left: 18px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
 }
 
 .error-display {
-  padding: 12px;
-  background: linear-gradient(135deg, #2d1b1b 0%, #3d1f1f 100%);
-  border-radius: 8px;
-  border-left: 4px solid #ff4444;
-  border: 1px solid #ff4444;
-  box-shadow: 0 0 8px rgba(255, 68, 68, 0.2);
+  border: 1px solid rgba(255, 107, 107, 0.4);
+  border-radius: 6px;
+  padding: 12px 14px;
+  background: rgba(255, 107, 107, 0.08);
 }
 
 .error-message {
-  color: #ff6666;
   margin: 0;
-  font-weight: 500;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  text-shadow: 0 0 2px #ff6666;
+  color: var(--color-danger);
+  font-size: 0.9rem;
 }
 
 .canvas-placeholder {
-  width: 800px;
-  height: 600px;
-  background: linear-gradient(135deg, rgba(13, 17, 23, 0.95) 0%, rgba(26, 26, 26, 0.95) 100%);
-  border-radius: 16px;
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  border-radius: 6px;
+  border: 1px dashed var(--color-border);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 32px rgba(0, 255, 65, 0.1);
-  backdrop-filter: blur(10px);
-  border: 2px dashed #00ff41;
-  position: relative;
-  overflow: hidden;
-}
-
-.canvas-placeholder::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 20px,
-    rgba(0, 255, 65, 0.05) 20px,
-    rgba(0, 255, 65, 0.05) 40px
-  );
-  pointer-events: none;
-}
-
-.placeholder-content {
+  gap: 12px;
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
   text-align: center;
-  color: #00cc33;
-  position: relative;
-  z-index: 1;
-}
-
-.placeholder-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  opacity: 0.8;
-  color: #00ff41;
-  text-shadow: 0 0 10px #00ff41;
 }
 
 .placeholder-content h3 {
-  margin: 0 0 0.5rem 0;
-  color: #00ff41;
-  font-size: 1.5rem;
-  font-weight: 600;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  text-shadow: 0 0 4px #00ff41;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
 }
 
 .placeholder-content p {
   margin: 0;
-  font-size: 1rem;
-  line-height: 1.5;
-  max-width: 300px;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  opacity: 0.8;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
 }
 
 .copy-notification {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
-  padding: 12px 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(40, 167, 69, 0.3);
-  z-index: 1000;
-  animation: slideIn 0.3s ease-out;
-  font-weight: 500;
+  top: 24px;
+  right: 32px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
 }
 
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-/* Responsive design */
 @media (max-width: 1200px) {
   .container {
     flex-direction: column;
-    gap: 16px;
+    gap: 24px;
   }
-  
+
   .input-panel {
     width: 100%;
-    max-width: 500px;
-    margin: 0 auto;
-  }
-  
-  .canvas-placeholder {
-    width: 100%;
-    max-width: 800px;
-    height: 400px;
+    max-width: none;
   }
 }
 
 @media (max-width: 768px) {
   .art-generator {
-    padding: 12px;
+    padding: 24px;
   }
-  
-  .input-panel {
+
+  .canvas-panel {
     padding: 16px;
-  }
-  
-  .input-textarea {
-    min-height: 150px;
-  }
-  
-  .canvas-placeholder {
-    height: 300px;
   }
 }
 </style>

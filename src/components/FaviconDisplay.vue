@@ -18,7 +18,7 @@
     <div class="favicon-info" v-if="showInfo">
       <p class="favicon-source">Texture source: {{ getSourceDomain() }}</p>
       <p class="favicon-status" :class="statusClass">
-        {{ isDefault ? 'Default artistic texture' : 'Custom texture loaded' }}
+        {{ isDefault ? 'Default texture' : 'Fetched texture ready' }}
       </p>
     </div>
   </div>
@@ -38,7 +38,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   showOverlay: false,
   showInfo: true,
-  altText: 'Artistic texture element'
+  altText: 'Texture preview'
 })
 
 const emit = defineEmits<{
@@ -61,7 +61,7 @@ const getSourceDomain = (): string => {
   
   try {
     // This is just for display - maintain steganographic disguise
-    return 'Artistic resource'
+    return 'Secured source'
   } catch {
     return 'Generated texture'
   }
@@ -70,7 +70,7 @@ const getSourceDomain = (): string => {
 const onImageLoad = (event: Event) => {
   imageLoaded.value = true
   const img = event.target as HTMLImageElement
-  imageSize.value = `${img.naturalWidth}×${img.naturalHeight}`
+  imageSize.value = `${img.naturalWidth} x ${img.naturalHeight}`
 }
 
 const onImageError = () => {
@@ -92,23 +92,28 @@ onMounted(() => {
 <style scoped>
 .favicon-display {
   position: relative;
-  display: inline-block;
-  margin: 0.5rem;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 8px;
   cursor: pointer;
 }
 
 .favicon-container {
   position: relative;
-  display: inline-block;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 6px;
+  transition: border-color 0.2s ease;
+}
+
+.favicon-display:hover .favicon-container {
+  border-color: var(--color-accent);
 }
 
 .favicon-image {
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
   display: block;
   border-radius: 4px;
@@ -116,11 +121,9 @@ onMounted(() => {
 
 .favicon-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  inset: 6px;
+  border-radius: 4px;
+  background: rgba(10, 14, 18, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -128,36 +131,24 @@ onMounted(() => {
   transition: opacity 0.2s ease;
 }
 
-.favicon-container:hover .favicon-overlay {
+.favicon-display:hover .favicon-overlay {
   opacity: 1;
 }
 
 .favicon-metadata {
   text-align: center;
-  color: white;
+  color: var(--color-text-primary);
   font-size: 0.75rem;
-}
-
-.favicon-type {
-  display: block;
-  font-weight: 500;
-}
-
-.favicon-size {
-  display: block;
-  opacity: 0.8;
-  margin-top: 0.25rem;
+  line-height: 1.4;
 }
 
 .favicon-info {
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  color: #6c757d;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
 }
 
 .favicon-source {
-  margin: 0 0 0.25rem 0;
-  font-style: italic;
+  margin: 0;
 }
 
 .favicon-status {
@@ -166,27 +157,10 @@ onMounted(() => {
 }
 
 .favicon-status--default {
-  color: #6c757d;
+  color: var(--color-text-muted);
 }
 
 .favicon-status--custom {
-  color: #28a745;
-}
-
-/* Artistic styling to maintain creative facade */
-.favicon-display {
-  filter: sepia(10%) saturate(110%) hue-rotate(5deg);
-}
-
-.favicon-container::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  border-radius: 10px;
-  z-index: -1;
+  color: var(--color-accent);
 }
 </style>

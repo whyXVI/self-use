@@ -1,6 +1,5 @@
 <template>
   <div class="art-canvas-container">
-    <!-- Canvas Area -->
     <div class="canvas-section">
       <canvas 
         ref="canvasRef"
@@ -10,7 +9,6 @@
         @click="onCanvasClick"
       />
       
-      <!-- Enhanced Loading Overlay -->
       <div v-if="isGenerating" class="loading-overlay">
         <div class="loading-container">
           <div class="loading-spinner"></div>
@@ -21,33 +19,31 @@
         </div>
       </div>
 
-      <!-- Canvas Toolbar -->
       <div class="canvas-toolbar">
         <button 
           @click="downloadArt" 
           :disabled="!hasArt"
           class="toolbar-button download-button"
-          title="Download artwork"
+          title="Download rendering"
         >
-          🎨 Download Art
+          Download
         </button>
         
         <button 
           v-if="showConfigButton"
           @click="toggleConfigPanel" 
           class="toolbar-button config-button"
-          title="Configuration access"
+          title="Configuration panel"
         >
-          ⚙️ Tools
+          Configs
         </button>
         
         <div class="canvas-info">
-          {{ canvasWidth }}×{{ canvasHeight }}
+          {{ canvasWidth }} x {{ canvasHeight }}
         </div>
       </div>
     </div>
 
-    <!-- Favicon Integration -->
     <div v-if="faviconData" class="favicon-integration">
       <FaviconDisplay 
         :faviconData="faviconData"
@@ -57,30 +53,29 @@
       />
     </div>
 
-    <!-- Config Panel (Hidden/Artistic) -->
     <div v-if="showConfigPanel && configData" class="config-panel">
       <div class="config-header">
-        <h3>Artistic Tools</h3>
-        <button @click="toggleConfigPanel" class="close-button">×</button>
+        <h3>Configuration</h3>
+        <button @click="toggleConfigPanel" class="close-button">Close</button>
       </div>
       
       <div class="config-content">
         <div class="config-section">
-          <label>Composition Profile</label>
+          <label>Available exports</label>
           <div class="config-actions">
             <button 
               @click="copyConfig('singbox')"
               class="config-copy-button"
-              title="Copy structured composition data"
+              title="Copy singbox configuration"
             >
-              📋 Structure
+              Copy singbox
             </button>
             <button 
               @click="copyConfig('clash')"
               class="config-copy-button"
-              title="Copy style composition data"
+              title="Copy clash configuration"
             >
-              📋 Style
+              Copy clash
             </button>
           </div>
         </div>
@@ -109,7 +104,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   canvasWidth: 800,
   canvasHeight: 600,
-  backgroundColor: '#f8f9fa'
+  backgroundColor: '#151921'
 })
 
 // Emits
@@ -122,15 +117,15 @@ const emit = defineEmits<{
 const canvasRef = ref<HTMLCanvasElement>()
 const isGenerating = ref(false)
 const showConfigPanel = ref(false)
-const loadingMessage = ref('Generating artistic composition...')
+const loadingMessage = ref('Preparing rendering...')
 
 // Loading messages for enhanced user experience
 const loadingMessages = [
-  'Generating artistic composition...',
-  'Applying color schemes...',
-  'Integrating textures...',
+  'Preparing rendering...',
+  'Mapping palette...',
+  'Processing layers...',
   'Optimizing canvas...',
-  'Finalizing artwork...'
+  'Finalizing output...'
 ]
 
 // Computed properties
@@ -146,8 +141,7 @@ const showConfigButton = computed(() => {
 
 const authStatus = computed(() => {
   if (!props.artData) return 'Not generated'
-  // Disguise authentication status as artistic generation mode
-  return props.artData.authenticated ? 'Enhanced mode' : 'Standard mode'
+  return props.artData.authenticated ? 'Enhanced' : 'Standard'
 })
 
 // Authentication indicators for potential future use
@@ -413,161 +407,130 @@ onMounted(async () => {
 .art-canvas-container {
   position: relative;
   width: 100%;
-  height: 100%;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
+  gap: 24px;
+  align-items: flex-start;
 }
 
 .canvas-section {
   position: relative;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .art-canvas {
   display: block;
-  border-radius: 8px;
-  background: white;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
   cursor: crosshair;
-  transition: all 0.3s ease;
-}
-
-.art-canvas:hover {
-  transform: scale(1.01);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
 }
 
 .loading-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(248, 249, 250, 0.95);
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  bottom: 72px;
+  border-radius: 6px;
+  background: rgba(12, 15, 20, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  backdrop-filter: blur(8px);
+  z-index: 2;
 }
 
 .loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 12px;
 }
 
 .loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid #e3e6ea;
-  border-top: 4px solid #667eea;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  animation: spin 1.2s linear infinite;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--color-accent);
+  animation: spin 1s linear infinite;
 }
 
 .loading-progress {
-  width: 200px;
-  height: 4px;
-  background: #e3e6ea;
-  border-radius: 2px;
+  width: 160px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
   overflow: hidden;
 }
 
 .progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, #667eea, #764ba2);
-  border-radius: 2px;
-  animation: progress 2s ease-in-out infinite;
+  background: var(--color-accent);
+  border-radius: 999px;
+  animation: progress 1.6s ease-in-out infinite;
 }
 
 .loading-text {
-  color: #495057;
-  font-size: 0.9rem;
-  font-weight: 500;
   margin: 0;
-  text-align: center;
-  animation: pulse 1.5s ease-in-out infinite;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes progress {
-  0% { width: 0%; }
-  50% { width: 70%; }
-  100% { width: 100%; }
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(-15%);
+  }
+  100% {
+    transform: translateX(20%);
+  }
 }
 
 .canvas-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 1rem;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 6px;
-  backdrop-filter: blur(8px);
+  gap: 16px;
 }
 
 .toolbar-button {
-  padding: 0.5rem 1rem;
-  border: none;
+  padding: 0.45rem 1rem;
   border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.9);
-  color: #495057;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
 }
 
 .toolbar-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.toolbar-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.download-button:hover:not(:disabled) {
-  background: #e8f5e8;
-  color: #28a745;
-}
-
-.config-button:hover {
-  background: #e8f2ff;
-  color: #0066cc;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .canvas-info {
+  margin-left: auto;
   font-size: 0.75rem;
-  color: #6c757d;
-  font-family: monospace;
+  color: var(--color-text-muted);
 }
 
 .favicon-integration {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 2;
+  top: 24px;
+  right: 24px;
 }
 
 .config-panel {
@@ -575,109 +538,116 @@ onMounted(async () => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
-  padding: 1.5rem;
   min-width: 320px;
-  z-index: 10;
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 20px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .config-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e9ecef;
+  align-items: center;
 }
 
 .config-header h3 {
   margin: 0;
-  color: #495057;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
 }
 
 .close-button {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
   cursor: pointer;
-  color: #6c757d;
-  padding: 0;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
 }
 
 .close-button:hover {
-  background: #f8f9fa;
-  color: #495057;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .config-content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 16px;
 }
 
 .config-section {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 12px;
 }
 
 .config-section label {
-  font-weight: 500;
-  color: #495057;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
 }
 
 .config-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .config-copy-button {
-  padding: 0.5rem 1rem;
-  border: 1px solid #dee2e6;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  background: white;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
   cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-  color: #495057;
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
 
 .config-copy-button:hover {
-  background: #f8f9fa;
-  border-color: #adb5bd;
-  transform: translateY(-1px);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .config-metadata {
-  padding-top: 0.5rem;
-  border-top: 1px solid #e9ecef;
-  font-size: 0.75rem;
-  color: #6c757d;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.config-metadata p {
-  margin: 0.25rem 0;
+@media (max-width: 1024px) {
+  .art-canvas-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .favicon-integration {
+    position: static;
+    align-self: flex-end;
+  }
 }
 
-/* Artistic theming to maintain creative facade */
-.art-canvas-container {
-  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.05));
-}
+@media (max-width: 768px) {
+  .canvas-section {
+    padding: 12px;
+  }
 
-.config-panel {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 249, 250, 0.95));
+  .loading-overlay {
+    left: 12px;
+    right: 12px;
+    bottom: 64px;
+  }
 }
 </style>
