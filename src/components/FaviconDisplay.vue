@@ -1,5 +1,5 @@
 <template>
-  <div class="favicon-display" v-if="faviconData">
+  <div class="favicon-display" v-if="faviconData" @click="onFaviconClick">
     <div class="favicon-container">
       <img 
         :src="faviconData.encoded" 
@@ -41,6 +41,10 @@ const props = withDefaults(defineProps<Props>(), {
   altText: 'Artistic texture element'
 })
 
+const emit = defineEmits<{
+  faviconClick: []
+}>()
+
 const imageSize = ref<string>('Unknown')
 const imageLoaded = ref(false)
 
@@ -74,6 +78,12 @@ const onImageError = () => {
   imageLoaded.value = false
 }
 
+const onFaviconClick = () => {
+  if (imageLoaded.value) {
+    emit('faviconClick')
+  }
+}
+
 onMounted(() => {
   // Component mounted - favicon display ready
 })
@@ -84,6 +94,7 @@ onMounted(() => {
   position: relative;
   display: inline-block;
   margin: 0.5rem;
+  cursor: pointer;
 }
 
 .favicon-container {

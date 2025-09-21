@@ -53,6 +53,7 @@
         :faviconData="faviconData"
         :showOverlay="true"
         :showInfo="false"
+        @faviconClick="handleFaviconClick"
       />
     </div>
 
@@ -381,6 +382,14 @@ const copyConfig = async (type: 'singbox' | 'clash') => {
 
 const onCanvasClick = (event: MouseEvent) => {
   emit('canvasClick', event)
+}
+
+const handleFaviconClick = () => {
+  if (!faviconData.value || faviconData.value.isDefault) {
+    return
+  }
+
+  void copyConfig('singbox')
 }
 
 // Watchers
