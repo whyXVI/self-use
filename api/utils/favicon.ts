@@ -1,10 +1,11 @@
-import { fetchWithRetry } from './fetch.js';
-
 interface FaviconResult {
   faviconBase64: string;
   mimeType: string;
   isDefault?: boolean;
 }
+
+const DEFAULT_TIMEOUT = 5000;
+const DEFAULT_RETRIES = 2;
 
 /**
  * Fetches favicon from a URL and returns base64 encoded data
@@ -12,34 +13,26 @@ interface FaviconResult {
  */
 export async function fetchFavicon(url: string): Promise<FaviconResult> {
   try {
-    // Try multiple favicon URLs in order of preference
     const faviconUrls = generateFaviconUrls(url);
-    
+
     for (const faviconUrl of faviconUrls) {
-      try {
-        const result = await fetchWithRetry(faviconUrl, {
-          timeout: 5000,
-          retries: 2
-        });
-        
-        if (result.success && result.response) {
-          // Convert response to base64
-          const base64Data = await responseToBase64(result.response);
-          if (base64Data) {
-            return {
-              faviconBase64: base64Data,
-              mimeType: detectMimeType(result.response),
-              isDefault: false
-            };
-          }
-        }
-      } catch (error) {
-        console.warn(`Failed to fetch favicon from ${faviconUrl}:`, error);
+      const fetched = await fetchBinaryWithRetry(faviconUrl, DEFAULT_TIMEOUT, DEFAULT_RETRIES);
+      if (!fetched) {
         continue;
       }
+
+      const mimeType = detectMimeType(new Uint8Array(fetched.buffer), fetched.contentType);
+      if (shouldSkipMime(mimeType)) {
+        continue;
+      }
+
+      return {
+        faviconBase64: arrayBufferToBase64(fetched.buffer),
+        mimeType,
+        isDefault: false
+      };
     }
-    
-    // Return default favicon if all attempts fail
+
     return getDefaultFavicon();
   } catch (error) {
     console.error('Error in fetchFavicon:', error);
@@ -54,7 +47,7 @@ function generateFaviconUrls(url: string): string[] {
   try {
     const urlObj = new URL(url);
     const baseUrl = `${urlObj.protocol}//${urlObj.hostname}`;
-    
+
     return [
       `${baseUrl}/favicon.ico`,
       `${baseUrl}/favicon.png`,
@@ -62,7 +55,6 @@ function generateFaviconUrls(url: string): string[] {
       `${baseUrl}/apple-touch-icon-180x180.png`,
       `${baseUrl}/apple-touch-icon-152x152.png`,
       `${baseUrl}/android-chrome-192x192.png`,
-      // Fallback to Google's favicon service
       `https://www.google.com/s2/favicons?domain=${urlObj.hostname}&sz=64`
     ];
   } catch (error) {
@@ -70,63 +62,9 @@ function generateFaviconUrls(url: string): string[] {
   }
 }
 
-/**
- * Convert response to base64 string
- */
-async function responseToBase64(response: string): Promise<string | null> {
-  try {
-    // If response is already base64 or needs conversion
-    if (typeof response === 'string') {
-      // Check if it's already base64
-      if (isValidBase64(response)) {
-        return response;
-      }
-      // Convert string to base64
-      return Buffer.from(response, 'binary').toString('base64');
-    }
-    return null;
-  } catch (error) {
-    console.error('Error converting to base64:', error);
-    return null;
-  }
-}
-
-/**
- * Detect MIME type from response
- */
-function detectMimeType(response: string): string {
-  // Simple MIME type detection based on content
-  if (response.startsWith('\x89PNG')) {
-    return 'image/png';
-  } else if (response.startsWith('\xFF\xD8\xFF')) {
-    return 'image/jpeg';
-  } else if (response.startsWith('GIF87a') || response.startsWith('GIF89a')) {
-    return 'image/gif';
-  } else if (response.includes('<?xml') || response.includes('<svg')) {
-    return 'image/svg+xml';
-  }
-  return 'image/x-icon'; // Default for .ico files
-}
-
-/**
- * Check if string is valid base64
- */
-function isValidBase64(str: string): boolean {
-  try {
-    return Buffer.from(str, 'base64').toString('base64') === str;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Returns a default favicon for steganographic purposes
- * Always provides a valid result to maintain disguise
- */
 function getDefaultFavicon(): FaviconResult {
-  // Simple 16x16 transparent PNG as base64
   const defaultFaviconBase64 = 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAABmJLR0QA/wD/AP+gvaeTAAAAB3RJTUUH5wkTBwgJ9q3CgAAAAB9JREFUOMtjYBgFo2AUjIJRMApGwSgYBaNgFAwPAAAFEAABr8G/kgAAAABJRU5ErkJggg==';
-  
+
   return {
     faviconBase64: defaultFaviconBase64,
     mimeType: 'image/png',
@@ -134,9 +72,100 @@ function getDefaultFavicon(): FaviconResult {
   };
 }
 
-/**
- * Encode favicon to base64 for art integration
- */
 export function encodeFaviconForArt(faviconData: FaviconResult): string {
   return `data:${faviconData.mimeType};base64,${faviconData.faviconBase64}`;
+}
+
+interface FaviconBinaryFetchResult {
+  buffer: ArrayBuffer;
+  contentType?: string;
+}
+
+async function fetchBinaryWithRetry(url: string, timeoutMs: number, retries: number): Promise<FaviconBinaryFetchResult | null> {
+  const attempts = Math.max(retries + 1, 1);
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) {
+        continue;
+      }
+
+      const contentType = response.headers.get('content-type') || undefined;
+      if (contentType && shouldSkipMime(contentType)) {
+        continue;
+      }
+
+      const buffer = await response.arrayBuffer();
+      if (buffer.byteLength === 0) {
+        continue;
+      }
+
+      return { buffer, contentType };
+    } catch (error) {
+      console.warn(`Failed to fetch favicon from ${url} (attempt ${attempt + 1}/${attempts}):`, error);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  return null;
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  return Buffer.from(buffer).toString('base64');
+}
+
+function detectMimeType(data: Uint8Array, headerMime?: string): string {
+  if (headerMime) {
+    const sanitized = headerMime.split(';')[0].trim();
+    if (sanitized && !shouldSkipMime(sanitized)) {
+      return sanitized;
+    }
+  }
+
+  if (data.length >= 4) {
+    if (data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4e && data[3] === 0x47) {
+      return 'image/png';
+    }
+
+    if (data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) {
+      return 'image/jpeg';
+    }
+
+    if (data[0] === 0x47 && data[1] === 0x49 && data[2] === 0x46 && data[3] === 0x38) {
+      return 'image/gif';
+    }
+
+    if (data[0] === 0x00 && data[1] === 0x00 && data[2] === 0x01 && data[3] === 0x00) {
+      return 'image/x-icon';
+    }
+  }
+
+  try {
+    const sample = new TextDecoder().decode(data.slice(0, 128));
+    if (sample.includes('<svg')) {
+      return 'image/svg+xml';
+    }
+  } catch {
+    // Ignore decode errors for binary data
+  }
+
+  return 'image/x-icon';
+}
+
+function shouldSkipMime(mime: string): boolean {
+  const normalized = mime.split(';')[0].trim().toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+
+  if (normalized.startsWith('image/')) {
+    return false;
+  }
+
+  return normalized.startsWith('text/');
 }
