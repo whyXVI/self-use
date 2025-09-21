@@ -86,7 +86,7 @@ import ArtCanvas from './ArtCanvas.vue'
 
 // Component state
 const artisticKey = ref('')
-const artParams = ref('{\n  "style": "geometric",\n  "colorScheme": "vibrant",\n  "complexity": "medium",\n  "password": "",\n  "subscriptionUrl": ""\n}')
+const artParams = ref('{\n  "style": "geometric",\n  "colorScheme": "vibrant",\n  "complexity": "medium",\n  "brushStroke": "",\n  "canvasTexture": ""\n}')
 const artResult = ref<ArtGenerationResult | null>(null)
 const isGenerating = ref(false)
 const errorMessage = ref('')
